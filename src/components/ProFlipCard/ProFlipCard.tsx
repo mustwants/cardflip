@@ -1,5 +1,5 @@
 //PATH src/components/ProFlipCard/ProFlipCard.tsx
-import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import "./ProFlipCard.css";
 
 type Social = { facebook?:string; instagram?:string; linkedin?:string; x?:string; bluesky?:string; pinterest?:string; youtube?:string; };
@@ -12,16 +12,15 @@ type Props = {
   tokens?:Token[]; social?:Social;
   sponsorLogoUrl?:string; sponsorHref?:string; connectToEmail?:string;
 
-  /* motion params */
-  grabCorner?: GrabCorner;      // default 'bottom-right'
-  curlIntensity?: number;       // 0..1 default .9
-  durationMs?: number;          // default 580
-  perspectivePx?: number;       // default 1200
-  overshootDeg?: number;        // default 6
-  shadowPeak?: number;          // default 1.15
-  slices?: number;              // default 12
-  liftZPx?: number;             // default 30
-  diagonalTwistDeg?: number;    // default 8
+  grabCorner?: GrabCorner;
+  curlIntensity?: number;
+  durationMs?: number;
+  perspectivePx?: number;
+  overshootDeg?: number;
+  shadowPeak?: number;
+  slices?: number;
+  liftZPx?: number;
+  diagonalTwistDeg?: number;
 };
 
 export default function ProFlipCard(p:Props){
@@ -33,34 +32,38 @@ export default function ProFlipCard(p:Props){
 
   const [showBack,setShowBack]=useState(false);
   const [animating,setAnimating]=useState(false);
-  const [prog,setProg]=useState(0);        // 0→1
-  const [open,setOpen]=useState(false);
-  const raf=useRef<number|null>(null);
+  const [prog,setProg]=useState(0);
+  const progRef=useRef(0);
+  const rafRef=useRef<number|null>(null);
+  const [isModalOpen,setIsModalOpen]=useState(false);
   const id=useId();
+  const arcId=`${id}-arc`;
 
   const reduced = typeof window!=="undefined" && "matchMedia" in window && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-  // animate progress with easing + overshoot, debounce during run
-  const animateTo = useCallback((target:number)=>{
-    if(reduced){ setProg(target); setAnimating(false); return; }
+  useEffect(()=>{ progRef.current=prog; },[prog]);
+
+  useEffect(()=>{
+    if(reduced){ setProg(showBack?1:0); setAnimating(false); return; }
     setAnimating(true);
-    const start=performance.now(); const init=prog; const dur=Math.max(1,durationMs);
-    const ease=(t:number)=>{ const u=1-t; return 3*.2*u*u*t + 3*.7*u*t*t + .2*t*t*t; }; // ~cb(0.2,0.7,0.2,1)
+    const target=showBack?1:0;
+    const start=performance.now();
+    const init=progRef.current;
+    const dur=Math.max(1,durationMs);
+    const ease=(t:number)=>{ const u=1-t; return 3*.2*u*u*t + 3*.7*u*t*t + .2*t*t*t; };
     const step=(now:number)=>{
       const t=Math.min(1,(now-start)/dur);
       const e=ease(t);
-      const settle=e + (overshootDeg/180)*Math.sin(Math.PI*e)*(target>init?1:-1); // ≤120ms settle implied
+      const settle=e + (overshootDeg/180)*Math.sin(Math.PI*e)*(target>init?1:-1);
       const v=init + (target-init)*Math.max(0,Math.min(1,settle));
       setProg(v);
-      if(t<1){ raf.current=requestAnimationFrame(step); } else { setAnimating(false); }
+      if(t<1){ rafRef.current=requestAnimationFrame(step); } else { setAnimating(false); }
     };
-    if(raf.current!==null) cancelAnimationFrame(raf.current);
-    raf.current=requestAnimationFrame(step);
-  },[durationMs,overshootDeg,prog,reduced]);
+    if(rafRef.current!==null) cancelAnimationFrame(rafRef.current);
+    rafRef.current=requestAnimationFrame(step);
+    return ()=>{ if(rafRef.current!==null) cancelAnimationFrame(rafRef.current); };
+  },[showBack,durationMs,overshootDeg,reduced]);
 
-  useEffect(()=>{ animateTo(showBack?1:0); return ()=>{ if(raf.current!==null) cancelAnimationFrame(raf.current); }; },[showBack,animateTo]);
-
-  // split About text across faces
   const [aboutFront,aboutBack]=useMemo(()=>{
     const limit=420, a=about.trim();
     if(a.length<=limit) return [a,""];
@@ -68,9 +71,8 @@ export default function ProFlipCard(p:Props){
     return [a.slice(0,cut).trim(), a.slice(cut).trim()];
   },[about]);
 
-  // slices mesh (N×N) and diagonal curl mapping
   const N=Math.max(10,Math.min(14,Math.round(slices)));
-  const cells=useMemo(()=>Array.from({length:N*N},(_,k)=>({i: k%N, j: Math.floor(k/N)})),[N]);
+  const cells=useMemo(()=>Array.from({length:N*N},(_,k)=>({i:k%N,j:Math.floor(k/N)})),[N]);
 
   const start = grabCorner==="top-left"    ? [0,0]
               : grabCorner==="top-right"   ? [1,0]
@@ -80,55 +82,48 @@ export default function ProFlipCard(p:Props){
               : grabCorner==="top-right"   ? [0,1]
               : grabCorner==="bottom-right"? [0,0]
               :                              [1,0];
-
   const len = Math.hypot(end[0]-start[0], end[1]-start[1]) || 1;
   const dir = [(end[0]-start[0])/len, (end[1]-start[1])/len];
   const nrm = [-dir[1], dir[0]];
 
-  // envelopes for lift and twist
-  const envBell = Math.sin(Math.PI*prog);           // 0→1→0 for curl and lift
-  const envPhaseB = Math.max(0, Math.min(1, (prog-0.2)/0.5 )); // 0 near A, 1 mid-B
-  const twist = diagonalTwistDeg * envPhaseB;       // rotateX up to ~8°
-  const liftZ = liftZPx * envBell;                  // +Z lift up to ~30px
+  const envBell=Math.sin(Math.PI*prog);
+  const envPhaseB=Math.max(0,Math.min(1,(prog-0.2)/0.5));
+  const twist=diagonalTwistDeg*envPhaseB;
+  const liftZ=liftZPx*envBell;
 
-  // local curl parameters
-  const sigma = 0.18;                  // ridge width
-  const ampBase = 18 * curlIntensity;  // deg
-  const tzBase  = 28 * curlIntensity;  // px
-  const rzBase  = 3  * curlIntensity;  // deg
+  const sigma=0.18;
+  const ampBase=18*curlIntensity;
+  const tzBase=28*curlIntensity;
+  const rzBase=3*curlIntensity;
 
   const curlFor=(i:number,j:number)=>{
     const u=(i+0.5)/N, v=(j+0.5)/N;
     const rel=[u-start[0], v-start[1]];
-    const tAlong = Math.min(1, Math.max(0, rel[0]*dir[0]+rel[1]*dir[1]));
+    const tAlong=Math.min(1,Math.max(0,rel[0]*dir[0]+rel[1]*dir[1]));
     const ridge=[start[0]+dir[0]*prog, start[1]+dir[1]*prog];
     const relR=[u-ridge[0], v-ridge[1]];
-    const distPerp = Math.abs(relR[0]*nrm[0] + relR[1]*nrm[1]);
-    const gauss = Math.exp(-(distPerp*distPerp)/(2*sigma*sigma)) * envBell;
-    const leadBias = 0.6 + 0.4*Math.cos(Math.PI*(tAlong-prog));
-    const w = gauss * leadBias;
-    const sign = prog<.5 ? 1 : -1; // direction swap after 90°
-    const ry = (ampBase*w) * sign;
-    const tz = tzBase*w;
-    const rz = rzBase*w * (grabCorner.includes("right")?-1:1);
+    const distPerp=Math.abs(relR[0]*nrm[0]+relR[1]*nrm[1]);
+    const gauss=Math.exp(-(distPerp*distPerp)/(2*sigma*sigma))*envBell;
+    const leadBias=0.6+0.4*Math.cos(Math.PI*(tAlong-prog));
+    const w=gauss*leadBias;
+    const sign=prog<.5?1:-1;
+    const ry=(ampBase*w)*sign;
+    const tz=tzBase*w;
+    const rz=rzBase*w*(grabCorner.includes("right")?-1:1);
     return `translateZ(${tz.toFixed(2)}px) rotateY(${ry.toFixed(2)}deg) rotateZ(${rz.toFixed(2)}deg)`;
   };
 
-  // shadow bias toward lifted corner
-  const shadowBiasX = (grabCorner.includes("right") ? 1 : -1) * 6 * envBell;
-  const shadowBiasY = (grabCorner.includes("bottom")? 1 : -1) * 6 * envBell;
-  const shadowScale = 1 + (shadowPeak-1) * envBell;
+  const shadowBiasX=(grabCorner.includes("right")?1:-1)*6*envBell;
+  const shadowBiasY=(grabCorner.includes("bottom")?1:-1)*6*envBell;
+  const shadowScale=1+(shadowPeak-1)*envBell;
 
-  // toggle
-  const flip = ()=>{ if(!animating) setShowBack(v=>!v); };
-  const onKey = (e:React.KeyboardEvent)=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); flip(); } };
+  const flip=()=>{ if(!animating) setShowBack(v=>!v); };
+  const onKey=(e:React.KeyboardEvent)=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); flip(); } };
 
-  // composite transform: rotateY + rotateX + translateZ, center anchored
   const cardRotateY = reduced ? (showBack?180:0) : prog*180;
   const cardRotateX = reduced ? 0 : twist;
   const cardTranslateZ = reduced ? 0 : liftZ;
 
-  // link set with icons
   const soc = [
     {k:"facebook",href:social.facebook,l:"Facebook",svg:icon("facebook")},
     {k:"instagram",href:social.instagram,l:"Instagram",svg:icon("instagram")},
@@ -139,7 +134,6 @@ export default function ProFlipCard(p:Props){
     {k:"youtube",href:social.youtube,l:"YouTube",svg:icon("youtube")},
   ];
 
-  // during edge-on, suppress pointer hits to faces
   const isEdge = prog>0.45 && prog<0.55;
 
   return (
@@ -165,7 +159,23 @@ export default function ProFlipCard(p:Props){
           <div className="pcard-banner"></div>
 
           <header className="pcard-top pcard-top--below">
-            <div className="pcard-avatar-wrap"><img className="pcard-avatar" src={headshotUrl} alt={`${name} headshot`} /></div>
+            <div className="pcard-avatar-wrap">
+              <img className="pcard-avatar" src={headshotUrl} alt={`${name} headshot`} />
+              {/* Curved banner hugging the avatar circle */}
+              <svg className="pcard-avatar-arc" viewBox="0 0 106 106" aria-hidden="true">
+                <defs>
+                  {/* Bottom arc from right→left near the rim */}
+                  <path id={arcId} d="M 86 86 A 46 46 0 0 1 20 86" />
+                </defs>
+                {/* Ribbon stroke behind the text */}
+                <use href={`#${arcId}`} className="arc-stroke" />
+                <text className="arc-text">
+                  <textPath href={`#${arcId}`} startOffset="50%" textAnchor="middle">
+                    Real Estate Agent
+                  </textPath>
+                </text>
+              </svg>
+            </div>
             <div className="pcard-id">
               <h2 className="pcard-name">{name}</h2>
               {title && <p className="pcard-title">{title}</p>}
@@ -195,7 +205,7 @@ export default function ProFlipCard(p:Props){
           </div>
 
           <div className="pcard-footer">
-            <button className="pcard-btn" onClick={()=>setOpen(true)}>Connect with {name.split(" ")[0]}</button>
+            <button className="pcard-btn" onClick={()=>setIsModalOpen(true)}>Connect with {name.split(" ")[0]}</button>
             <button
               className="pcard-btn flip-btn"
               aria-pressed={showBack}
@@ -206,7 +216,6 @@ export default function ProFlipCard(p:Props){
             >{showBack ? "Flip Back" : "Flip"}</button>
           </div>
 
-          {/* curl mesh */}
           <div className="pcard-mesh" aria-hidden="true">
             {cells.map(({i,j})=>(
               <div key={`${i}-${j}`} className="pcard-cell"><div className="pcard-cell-inner" style={{transform:curlFor(i,j)}}/></div>
@@ -237,7 +246,7 @@ export default function ProFlipCard(p:Props){
           </div>
 
           <div className="pcard-footer">
-            <button className="pcard-btn" onClick={()=>setOpen(true)}>Connect with {name.split(" ")[0]}</button>
+            <button className="pcard-btn" onClick={()=>setIsModalOpen(true)}>Connect with {name.split(" ")[0]}</button>
             <button
               className="pcard-btn flip-btn"
               aria-pressed={showBack}
@@ -256,7 +265,7 @@ export default function ProFlipCard(p:Props){
         </section>
       </div>
 
-      {open && <ConnectModal toEmail={connectToEmail} personName={name} onClose={()=>setOpen(false)} />}
+      {isModalOpen && <ConnectModal toEmail={connectToEmail} personName={name} onClose={()=>setIsModalOpen(false)} />}
       <p id={`${id}-help`} className="sr-only">Flip toggles with one tap. Back is opaque and interactive. Enter/Space supported. Reduced-motion swaps instantly.</p>
     </div>
   );
@@ -290,7 +299,6 @@ function ConnectModal({toEmail,personName,onClose}:{toEmail:string;personName:st
   );
 }
 
-/* icons */
 function icon(name:string){
   const P=(d:string)=><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d={d}/></svg>;
   switch(name){
@@ -304,3 +312,5 @@ function icon(name:string){
     default: return null;
   }
 }
+
+

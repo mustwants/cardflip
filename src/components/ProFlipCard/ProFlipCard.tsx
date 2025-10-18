@@ -1,4 +1,5 @@
 //PATH src/components/ProFlipCard/ProFlipCard.tsx
+
 import { useId, useState } from "react";
 import "./ProFlipCard.css";
 
@@ -15,6 +16,7 @@ type ProFlipCardProps = {
   headshotUrl: string; logoSmallUrl?: string; affiliationBadgeUrl?: string;
   social?: SocialLinks;
   sponsorLogoUrl?: string;
+  tokenBadges?: Array<{ src: string; alt: string }>;
   connectButtonText?: string; connectToEmail?: string;
 };
 
@@ -26,6 +28,7 @@ export default function ProFlipCard({
   headshotUrl, logoSmallUrl, affiliationBadgeUrl,
   social = {},
   sponsorLogoUrl,
+  tokenBadges = [],
   connectButtonText = "Connect with Anne",
   connectToEmail = "MustWants@MustWants.com",
 }: ProFlipCardProps) {
@@ -47,6 +50,15 @@ export default function ProFlipCard({
 
             <div className="pcard-id">
               <h2 className="pcard-name">{name}</h2>
+
+              {tokenBadges.length > 0 && (
+                <div className="pcard-tokens" aria-label="Military affiliation tokens">
+                  {tokenBadges.map((t, i) => (
+                    <img key={i} src={t.src} alt={t.alt} className="pcard-token" />
+                  ))}
+                </div>
+              )}
+
               {title && <p className="pcard-title">{title}</p>}
               {location && <p className="pcard-loc">{location}</p>}
             </div>
@@ -80,14 +92,13 @@ export default function ProFlipCard({
         {/* BACK */}
         <section className="pcard-face pcard-back" role="group" aria-label="Back of card">
           <header className="pcard-back-head">
-            <h3 className="pcard-back-title">{name} — {title || "Professional"}</h3>
+            <h3 className="pcard-back-title">About {name.split(" ")[0]} — Continued</h3>
           </header>
 
           <div className="pcard-about" tabIndex={0} aria-label="About content (scrollable)">
             {about ? <p>{about}</p> : <p>No bio provided.</p>}
           </div>
 
-          {/* Social with icons */}
           <div className="pcard-links">
             {email && <a className="pcard-link" href={`mailto:${email}`}>{icon("mail")} Email</a>}
             {website && <a className="pcard-link" href={website} target="_blank" rel="noopener noreferrer">{icon("link")} Web</a>}
@@ -99,7 +110,6 @@ export default function ProFlipCard({
             {social.tiktok && <a className="pcard-link" href={social.tiktok} target="_blank" rel="noopener noreferrer">{icon("tiktok")} TikTok</a>}
           </div>
 
-          {/* Sponsor bottom-left */}
           <div className="pcard-sponsor">
             <div style={{fontSize:12,opacity:.9}}>Sponsored by:</div>
             {sponsorLogoUrl && <img src={sponsorLogoUrl} alt="Trident Home Loans" />}
@@ -116,7 +126,6 @@ export default function ProFlipCard({
   );
 }
 
-/* Corner flip button */
 function FlipFab({ flipped, onClick }: { flipped: boolean; onClick: () => void }) {
   return (
     <button type="button" className="pcard-fab" aria-pressed={flipped} aria-label={flipped ? "Show front" : "Show back"} onClick={onClick}>
@@ -127,7 +136,6 @@ function FlipFab({ flipped, onClick }: { flipped: boolean; onClick: () => void }
   );
 }
 
-/* Simple mailto modal */
 function ConnectModal({ toEmail, personName, onClose }:{toEmail:string;personName:string;onClose:()=>void}) {
   const [first,setFirst]=useState(""); const [last,setLast]=useState(""); const [email,setEmail]=useState(""); const [phone,setPhone]=useState("");
   const submit=()=>{const subject=encodeURIComponent(`Connect with ${personName}`);const body=encodeURIComponent(`Please connect me with ${personName}.\n\nFirst Name: ${first}\nLast Name: ${last}\nEmail: ${email}\nPhone: ${phone}\n\nSource: ${location.href}`);window.location.href=`mailto:${toEmail}?subject=${subject}&body=${body}`;onClose()};
@@ -150,7 +158,6 @@ function ConnectModal({ toEmail, personName, onClose }:{toEmail:string;personNam
   </div>);
 }
 
-/* Inline icons */
 function icon(name:string){
   const p=(d:string)=><svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d={d}/></svg>;
   switch(name){
@@ -165,6 +172,7 @@ function icon(name:string){
     default: return null;
   }
 }
+
 
 
 

@@ -1,6 +1,5 @@
 //PATH src/components/ProFlipCard/ProFlipCard.tsx
-
-import React, { useId, useState } from "react";
+import { useId, useState } from "react";
 import "./ProFlipCard.css";
 
 export type SocialLinks = {
@@ -17,31 +16,40 @@ type ProFlipCardProps = {
   height?: number;
   name: string;
   title?: string;
+  location?: string;
   email?: string;
   website?: string;
   phone?: string;
+  serviceAffiliation?: string; // e.g. "Veteran, Service Member, Military Spouse"
   about?: string;
   headshotUrl: string;
   logoSmallUrl?: string;
   affiliationBadgeUrl?: string;
   social?: SocialLinks;
+  connectButtonText?: string;   // default "Connect with Anne"
+  connectToEmail?: string;      // default "MustWants@MustWants.com"
 };
 
 export default function ProFlipCard({
-  width = 420,
-  height = 560,
+  width = 440,
+  height = 580,
   name,
   title,
+  location,
   email,
   website,
   phone,
+  serviceAffiliation,
   about,
   headshotUrl,
   logoSmallUrl,
   affiliationBadgeUrl,
   social = {},
+  connectButtonText = "Connect with Anne",
+  connectToEmail = "MustWants@MustWants.com",
 }: ProFlipCardProps) {
   const [flipped, setFlipped] = useState(false);
+  const [open, setOpen] = useState(false);
   const cardId = useId();
 
   return (
@@ -68,6 +76,7 @@ export default function ProFlipCard({
             <div className="pcard-id">
               <h2 className="pcard-name">{name}</h2>
               {title && <p className="pcard-title">{title}</p>}
+              {location && <p className="pcard-loc">{location}</p>}
             </div>
 
             {logoSmallUrl && (
@@ -76,6 +85,14 @@ export default function ProFlipCard({
           </div>
 
           <div className="pcard-front-body">
+            {serviceAffiliation && (
+              <div className="pcard-badges" aria-label="Service affiliation">
+                {serviceAffiliation.split(",").map((s) => (
+                  <span key={s.trim()} className="pcard-badge">{s.trim()}</span>
+                ))}
+              </div>
+            )}
+
             <ul className="pcard-kv">
               {phone && (
                 <li>
@@ -100,19 +117,17 @@ export default function ProFlipCard({
             </ul>
 
             <div className="pcard-cta-row">
-              {email && (
-                <a className="pcard-btn" href={`mailto:${email}`}>
-                  Email
-                </a>
-              )}
+              <button className="pcard-btn pcard-btn-cta" type="button" onClick={() => setOpen(true)}>
+                {connectButtonText}
+              </button>
               {website && (
                 <a className="pcard-btn" href={website} target="_blank" rel="noopener noreferrer">
                   Website
                 </a>
               )}
-              {phone && (
-                <a className="pcard-btn" href={`tel:${phone.replace(/\s+/g, "")}`}>
-                  Call
+              {email && (
+                <a className="pcard-btn" href={`mailto:${email}`}>
+                  Email
                 </a>
               )}
             </div>
@@ -132,86 +147,42 @@ export default function ProFlipCard({
           </div>
 
           <div className="pcard-links">
-            {email && (
-              <a className="pcard-link" href={`mailto:${email}`}>
-                Email
-              </a>
-            )}
+            {email && <a className="pcard-link" href={`mailto:${email}`}>Email</a>}
             {website && (
-              <a
-                className="pcard-link"
-                href={website}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                Web
-              </a>
-            )}
-            {social?.linkedin && (
-              <a
-                className="pcard-link"
-                href={social.linkedin}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                LinkedIn
-              </a>
+              <a className="pcard-link" href={website} target="_blank" rel="noopener noreferrer">Web</a>
             )}
             {social?.facebook && (
-              <a
-                className="pcard-link"
-                href={social.facebook}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                Facebook
-              </a>
+              <a className="pcard-link" href={social.facebook} target="_blank" rel="noopener noreferrer">Facebook</a>
             )}
             {social?.instagram && (
-              <a
-                className="pcard-link"
-                href={social.instagram}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                Instagram
-              </a>
+              <a className="pcard-link" href={social.instagram} target="_blank" rel="noopener noreferrer">Instagram</a>
+            )}
+            {social?.linkedin && (
+              <a className="pcard-link" href={social.linkedin} target="_blank" rel="noopener noreferrer">LinkedIn</a>
             )}
             {social?.twitter && (
-              <a
-                className="pcard-link"
-                href={social.twitter}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                X/Twitter
-              </a>
+              <a className="pcard-link" href={social.twitter} target="_blank" rel="noopener noreferrer">X/Twitter</a>
             )}
             {social?.youtube && (
-              <a
-                className="pcard-link"
-                href={social.youtube}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                YouTube
-              </a>
+              <a className="pcard-link" href={social.youtube} target="_blank" rel="noopener noreferrer">YouTube</a>
             )}
             {social?.tiktok && (
-              <a
-                className="pcard-link"
-                href={social.tiktok}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                TikTok
-              </a>
+              <a className="pcard-link" href={social.tiktok} target="_blank" rel="noopener noreferrer">TikTok</a>
             )}
           </div>
 
           <FlipFab flipped={flipped} onClick={() => setFlipped(false)} />
         </section>
       </div>
+
+      {/* Connect Modal */}
+      {open && (
+        <ConnectModal
+          toEmail={connectToEmail}
+          personName={name}
+          onClose={() => setOpen(false)}
+        />
+      )}
 
       <p id={`${cardId}-desc`} className="sr-only">
         Click the bottom-right circular button to flip the card. Press Space or Enter when focused.
@@ -220,7 +191,7 @@ export default function ProFlipCard({
   );
 }
 
-/** Bottom-right floating action button for flipping */
+/** Flip button */
 function FlipFab({ flipped, onClick }: { flipped: boolean; onClick: () => void }) {
   return (
     <button
@@ -236,20 +207,58 @@ function FlipFab({ flipped, onClick }: { flipped: boolean; onClick: () => void }
         }
       }}
     >
-      <svg
-        className={`pcard-fab-icon ${flipped ? "rot" : ""}`}
-        width="18"
-        height="18"
-        viewBox="0 0 24 24"
-        aria-hidden="true"
-      >
-        <path
-          d="M12 5v2.8c3.3 0 6 2.7 6 6h-2.5l3.5 4 3.5-4H20c0-4.4-3.6-8-8-8zM6 10l-3.5 4H6c0 4.4 3.6 8 8 8v-2.8c-3.3 0-6-2.7-6-6h2.5L6 10z"
-          fill="currentColor"
-        />
+      <svg className={`pcard-fab-icon ${flipped ? "rot" : ""}`} width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M12 5v2.8c3.3 0 6 2.7 6 6h-2.5l3.5 4 3.5-4H20c0-4.4-3.6-8-8-8zM6 10l-3.5 4H6c0 4.4 3.6 8 8 8v-2.8c-3.3 0-6-2.7-6-6h2.5L6 10z" fill="currentColor"/>
       </svg>
     </button>
   );
 }
+
+/** Simple modal that composes a mailto: to MustWants@MustWants.com */
+function ConnectModal({
+  toEmail,
+  personName,
+  onClose,
+}: {
+  toEmail: string;
+  personName: string;
+  onClose: () => void;
+}) {
+  const [first, setFirst] = useState("");
+  const [last, setLast] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+
+  const submit = () => {
+    const subject = encodeURIComponent(`Connect with ${personName}`);
+    const body = encodeURIComponent(
+      `Please connect me with ${personName}.\n\nFirst Name: ${first}\nLast Name: ${last}\nEmail: ${email}\nPhone: ${phone}\n\nSource: ${location.href}`
+    );
+    window.location.href = `mailto:${toEmail}?subject=${subject}&body=${body}`;
+    onClose();
+  };
+
+  const disabled = !(first && last && email);
+
+  return (
+    <div className="mw-modal" role="dialog" aria-modal="true" aria-label="Connect form">
+      <div className="mw-modal-card">
+        <h3>Connect with {personName}</h3>
+        <div className="mw-form">
+          <label>First Name<input value={first} onChange={(e)=>setFirst(e.target.value)} placeholder="First name" /></label>
+          <label>Last Name<input value={last} onChange={(e)=>setLast(e.target.value)} placeholder="Last name" /></label>
+          <label>Email<input value={email} onChange={(e)=>setEmail(e.target.value)} placeholder="you@example.com" type="email" /></label>
+          <label>Phone<input value={phone} onChange={(e)=>setPhone(e.target.value)} placeholder="+1 555 555 5555" /></label>
+        </div>
+        <div className="mw-actions">
+          <button className="pcard-btn" onClick={onClose} type="button">Cancel</button>
+          <button className="pcard-btn pcard-btn-cta" onClick={submit} type="button" disabled={disabled}>Send</button>
+        </div>
+      </div>
+      <button className="mw-overlay" aria-label="Close" onClick={onClose} />
+    </div>
+  );
+}
+
 
 

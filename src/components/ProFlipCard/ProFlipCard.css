@@ -1,186 +1,79 @@
 /*PATH src/components/ProFlipCard/ProFlipCard*/
-/* ==== STAGE (fixed position, deep perspective) ==== */
-.pcard-stage{
-  position:relative;
-  width:100%; height:100%;
-  perspective:1800px;
-  perspective-origin: 100% 100%; /* bottom-right */
-  isolation:isolate;
-}
-
-/* ==== CARD (no drift; flips in-place from BR corner) ==== */
-.pcard{
-  position:relative;
-  width:100%; height:100%;
-  transform-style:preserve-3d;
-  transform-origin:100% 100%;
-  transition: transform 820ms cubic-bezier(.2,.8,.1,1);
-  border-radius:18px;
-  will-change:transform;
-  box-shadow: 0 36px 70px rgba(0,0,0,.45), inset 0 0 0 1px var(--line);
-}
-.pcard::before{ /* thickness */
-  content:"";
-  position:absolute; inset:0;
-  border-radius:18px;
-  background: var(--panel-weak);
-  transform: translateZ(-14px);
-  box-shadow: inset 0 0 0 1px var(--line);
-}
-
-/* flip strictly around Y; keeps same spot */
-.pcard.is-flipped{ transform: rotateY(180deg); }
-
-/* ==== FACES ==== */
-.pcard-face{
-  position:absolute; inset:0;
-  border-radius:18px;
-  backface-visibility:hidden;
-  overflow:hidden;
-  display:grid; grid-template-rows:auto 1fr auto;
-  background: var(--panel);
-  box-shadow: inset 0 0 0 1px var(--line);
-}
-.pcard-front{
-  background:
-    linear-gradient(180deg, var(--panel), color-mix(in srgb, var(--panel) 92%, var(--accent2)));
-  transform: translateZ(1px);
-}
-.pcard-back{
-  background:
-    linear-gradient(180deg, var(--panel), color-mix(in srgb, var(--panel) 92%, var(--accent4)));
-  transform: rotateY(180deg) translateZ(1px);
-}
-
-/* ==== HEADER ==== */
-.pcard-top{
-  display:grid;
-  grid-template-columns:108px 1fr 72px;
-  gap:14px; align-items:center;
-  padding:16px 16px 8px;
-}
-.pcard-avatar-wrap{
-  position:relative; width:104px; height:104px; padding:3px; border-radius:999px;
-  background: linear-gradient(135deg, var(--accent2), var(--accent3));
-  display:grid; place-items:center;
-}
-.pcard-avatar{
-  width:100%; height:100%; border-radius:999px; object-fit:cover; aspect-ratio:1/1;
-  box-shadow: inset 0 0 0 1px var(--line);
-}
-.pcard-affiliation{ position:absolute; right:-6px; bottom:-6px; width:46px; height:46px; object-fit:contain }
-
-.pcard-id{ min-width:0 }
-.pcard-name{
-  margin:0; font:700 20px/1.2 "Roboto Condensed","Roboto",system-ui,Arial,sans-serif;
-}
-.pcard-row{
-  display:flex; align-items:center; gap:6px; margin-top:6px; flex-wrap:wrap;
-}
-.pcard-token{ /* tiny tokens next to name */
-  width:16px; height:16px; border-radius:999px; object-fit:contain;
-  background:#fff; box-shadow:0 1px 3px rgba(0,0,0,.25), inset 0 0 0 1px var(--line);
-}
-.pcard-title{ margin:6px 0 0; font-size:13px; opacity:.9 }
-.pcard-loc{ margin:2px 0 0; font-size:12px; opacity:.8 }
-
-.pcard-logo{
-  width:64px; height:64px; object-fit:contain; justify-self:end;
-  border-radius:12px; padding:6px;
-  background: color-mix(in srgb, var(--panel), var(--fg) 4%);
-  box-shadow: 0 8px 16px rgba(0,0,0,.22), inset 0 0 0 1px var(--line);
-}
-
-/* ==== BODY ==== */
-.pcard-front-body{ padding:8px 16px 16px; display:grid; gap:14px }
-
-.pcard-badges{ display:flex; gap:8px; flex-wrap:wrap }
-.pcard-badge{
-  padding:4px 10px; border-radius:999px; font-size:11px; font-weight:700;
-  background: color-mix(in srgb, var(--accent4) 16%, transparent);
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent4) 45%, transparent);
-}
-
-.pcard-kv{
-  list-style:none; margin:0; padding:0; border-radius:12px;
-  background: color-mix(in srgb, var(--panel), var(--fg) 3%);
-  box-shadow: inset 0 0 0 1px var(--line);
-}
-.pcard-kv li{ display:grid; grid-template-columns:94px 1fr; gap:8px; padding:10px 12px; align-items:center }
-.pcard-kv li+li{ border-top:1px dashed var(--line-strong) }
-.pcard-kv span{ font-size:11px; opacity:.7 }
-.pcard-kv a{ color: color-mix(in srgb, var(--accent2) 70%, #236); text-decoration:none }
-.pcard-kv a:hover{ text-decoration:underline }
-
-/* CTA buttons — centered text, pill, 3D */
-.pcard-cta-row{ display:flex; gap:10px; flex-wrap:wrap }
-.pcard-btn{
-  display:inline-flex; align-items:center; justify-content:center;
-  height:36px; padding:0 14px; border-radius:999px; border:0; cursor:pointer;
-  font-weight:700; color:#061019; text-decoration:none;
-  background: linear-gradient(135deg, var(--accent3), var(--accent2));
-  box-shadow: 0 12px 22px color-mix(in srgb,var(--accent2) 35%,transparent),
-              0 2px 0 rgba(0,0,0,.28),
-              inset 0 0 0 1px rgba(255,255,255,.55);
-}
-.pcard-btn:active{ transform: translateY(1px) }
-
-/* ==== BACK CONTENT ==== */
-.pcard-back-head{ padding:14px 16px 6px }
-.pcard-back-title{ margin:0; font:700 16px/1.2 "Roboto Condensed","Roboto",system-ui }
-
-.pcard-about{
-  margin:0 16px; padding:12px; border-radius:12px;
-  max-height: 320px; overflow:auto; line-height:1.55;
-  background: color-mix(in srgb, var(--panel), var(--fg) 4%);
-  box-shadow: inset 0 0 0 1px var(--line);
-}
-
-/* social bar with icons */
-.pcard-links{ display:flex; flex-wrap:wrap; gap:8px; padding:12px 16px 56px 16px }
-.pcard-link{
-  height:32px; padding:0 10px; border-radius:10px; display:inline-flex; align-items:center; gap:6px;
-  background: color-mix(in srgb, var(--panel), var(--fg) 8%); box-shadow: inset 0 0 0 1px var(--line-strong);
-  text-decoration:none; color:inherit; font-size:12px;
-}
-
-/* sponsor bottom-left */
-.pcard-sponsor{
-  position:absolute; left:16px; bottom:16px; display:flex; align-items:center; gap:8px;
-  font-size:11px; opacity:.9;
-}
-.pcard-sponsor img{ width:108px; height:30px; object-fit:contain }
-
-/* Flip control — floats over both faces */
-.pcard-fab{
-  position:absolute; right:12px; bottom:12px;
-  width:46px; height:46px; border-radius:999px; border:0; cursor:pointer; z-index:20;
-  color:#061019; background: conic-gradient(from 220deg, var(--accent3), var(--accent2));
-  display:grid; place-items:center;
-  box-shadow: 0 16px 28px color-mix(in srgb,var(--accent2) 35%,transparent),
-              0 3px 0 rgba(0,0,0,.32),
-              inset 0 0 0 1px rgba(255,255,255,.55);
-}
-.pcard-fab-icon{ transition: transform 360ms cubic-bezier(.2,.8,0,1) }
-.pcard-fab-icon.rot{ transform: rotate(180deg) }
-
-/* Modal (centered) */
-.mw-modal{ position:fixed; inset:0; display:grid; place-items:center; z-index:50 }
-.mw-overlay{ position:fixed; inset:0; background:rgba(0,0,0,.55); backdrop-filter: blur(2px) }
-.mw-modal-card{
-  position:relative; z-index:60; width:min(92vw, 420px);
-  border-radius:14px; padding:16px; background: var(--panel);
-  box-shadow: 0 28px 60px rgba(0,0,0,.5), inset 0 0 0 1px var(--line);
-}
-.mw-modal-card h3{ margin:0 0 10px; font:700 18px/1.2 "Roboto Condensed","Roboto",system-ui }
-.mw-form{ display:grid; gap:10px }
-.mw-form label{ display:grid; gap:4px; font-size:12px }
-.mw-form input{
-  height:36px; border-radius:10px; border:1px solid var(--line-strong);
-  padding:0 10px; background:#fff; color:#061019;
-}
-.mw-actions{ display:flex; gap:10px; justify-content:flex-end; margin-top:12px }
-
+/* MustWants theme seeds */
+:root{--mw-green:#8ABA4E;--mw-mint:#74E4B8;--mw-neon:#D1EE00;--mw-pink:#F20359}
+.pcard-stage{position:relative;isolation:isolate;perspective:2000px;perspective-origin:100% 100%}
+.pcard{position:relative;width:100%;height:100%;transform-style:preserve-3d;transform-origin:100% 100%;transition:transform 820ms cubic-bezier(.2,.8,.1,1);border-radius:18px;box-shadow:0 40px 80px rgba(0,0,0,.45),inset 0 0 0 1px var(--line)}
+.pcard::before{content:"";position:absolute;inset:0;border-radius:18px;background:var(--panel-weak);transform:translateZ(-14px);box-shadow:inset 0 0 0 1px var(--line)}
+.pcard.is-flipped{transform:rotateY(180deg)} /* in-place flip */
+.pcard-face{position:absolute;inset:0;border-radius:18px;overflow:hidden;backface-visibility:hidden;display:grid;grid-template-rows:auto 1fr;transform-style:preserve-3d;background:var(--panel)}
+/* banner + ribbon */
+.pcard-banner{position:absolute;inset:0;pointer-events:none;background:
+  radial-gradient(900px 360px at -5% -20%, color-mix(in srgb,var(--mw-neon) 20%,transparent), transparent 60%),
+  radial-gradient(900px 360px at 110% 120%, color-mix(in srgb,var(--mw-mint) 18%,transparent), transparent 60%)}
+.pcard-ribbon{position:absolute;left:0;right:0;top:0;height:6px;background:linear-gradient(90deg,var(--mw-neon),var(--mw-mint))}
+.pcard-front{transform:translateZ(1px)}
+.pcard-back{transform:rotateY(180deg) translateZ(1px)}
+/* curl hint */
+.pcard-curl{position:absolute;right:10px;bottom:10px;width:78px;height:78px;pointer-events:none;opacity:.7;background:
+  radial-gradient(closest-side at 78% 78%, rgba(255,255,255,.8), rgba(255,255,255,.12) 60%,transparent 62%),
+  conic-gradient(from 210deg, rgba(0,0,0,.25), transparent 40%);
+  -webkit-mask: radial-gradient(120% 120% at 100% 100%, transparent 58%, #000 59%);
+          mask: radial-gradient(120% 120% at 100% 100%, transparent 58%, #000 59%);
+  border-bottom-right-radius:100%;filter:drop-shadow(0 6px 10px rgba(0,0,0,.28))}
+.pcard.is-flipped .pcard-curl{transform:rotate(168deg)}
+/* header */
+.pcard-top{position:relative;z-index:2;display:grid;grid-template-columns:110px 1fr 74px;gap:14px;align-items:center;padding:16px}
+.pcard-avatar-wrap{position:relative;width:106px;height:106px;padding:3px;border-radius:999px;background:linear-gradient(135deg,var(--mw-mint),var(--mw-neon));display:grid;place-items:center;box-shadow:0 10px 22px rgba(0,0,0,.3)}
+.pcard-avatar{width:100%;height:100%;border-radius:999px;object-fit:cover;aspect-ratio:1/1;box-shadow:inset 0 0 0 1px var(--line)}
+.pcard-logo{width:64px;height:64px;object-fit:contain;justify-self:end;border-radius:12px;padding:6px;background:color-mix(in srgb,var(--panel),var(--fg) 4%);box-shadow:0 8px 16px rgba(0,0,0,.22),inset 0 0 0 1px var(--line)}
+.pcard-id{min-width:0}
+.pcard-name-row{display:flex;align-items:center;gap:8px}
+.pcard-name{margin:0;font:700 22px/1.2 "Roboto Condensed","Roboto",system-ui}
+.pcard-token-row{display:flex;gap:6px}
+.pcard-token{width:18px;height:18px;border-radius:999px;object-fit:contain;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25),inset 0 0 0 1px var(--line)}
+.pcard-title{margin:4px 0 0;font-size:13px;opacity:.9}
+.pcard-loc{margin:2px 0 0;font-size:12px;opacity:.8}
+.pcard-website{display:inline-block;margin-top:6px;font-size:12px;color:color-mix(in srgb,var(--mw-mint) 70%, #235);text-decoration:none}
+.pcard-website:hover{text-decoration:underline}
+/* social */
+.pcard-social{display:flex;gap:8px;margin-top:8px}
+.pcard-soc{display:grid;place-items:center;width:28px;height:28px;border-radius:8px;background:color-mix(in srgb,var(--panel),var(--fg) 8%);box-shadow:inset 0 0 0 1px var(--line)}
+.pcard-soc.is-disabled{opacity:.35;filter:grayscale(1);pointer-events:none}
+/* body */
+.pcard-body{padding:10px 16px 68px;display:grid;gap:12px}
+.pcard-badges{display:flex;gap:8px;flex-wrap:wrap}
+.pcard-badge{padding:4px 10px;border-radius:999px;font-size:11px;font-weight:700;background:color-mix(in srgb,var(--mw-pink) 16%,transparent);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--mw-pink) 45%,transparent)}
+.pcard-about{border-radius:12px;padding:12px;background:color-mix(in srgb,var(--panel),var(--fg) 4%);box-shadow:inset 0 0 0 1px var(--line)}
+.pcard-about h4{margin:0 0 6px;font:700 14px/1.2 "Roboto Condensed","Roboto",system-ui}
+.pcard-continued{margin:.25rem 0 0;opacity:.7;font-size:12px}
+.pcard-kv{list-style:none;margin:0;padding:0;border-radius:12px;background:color-mix(in srgb,var(--panel),var(--fg) 3%);box-shadow:inset 0 0 0 1px var(--line)}
+.pcard-kv li{display:grid;grid-template-columns:90px 1fr;gap:8px;padding:10px 12px;align-items:center}
+.pcard-kv li+li{border-top:1px dashed var(--line-strong)}
+.pcard-kv span{font-size:11px;opacity:.7}
+.pcard-kv a{text-decoration:none;color:color-mix(in srgb,var(--mw-mint) 70%, #236)}
+.pcard-cta{display:grid;place-items:center}
+.pcard-btn{display:inline-flex;align-items:center;justify-content:center;height:36px;padding:0 16px;border-radius:999px;border:0;cursor:pointer;font-weight:700;color:#061019;background:linear-gradient(135deg,var(--mw-neon),var(--mw-mint));box-shadow:0 14px 26px color-mix(in srgb,var(--mw-mint) 35%,transparent),0 2px 0 rgba(0,0,0,.28),inset 0 0 0 1px rgba(255,255,255,.55)}
+.pcard-btn.small{height:30px;padding:0 12px;font-size:12px}
+.pcard-btn:active{transform:translateY(1px)}
+/* back */
+.pcard-back-name{margin:16px 16px 0;font:700 20px/1.2 "Roboto Condensed","Roboto",system-ui}
+.pcard-back-title{margin:4px 16px 0;font-size:13px;opacity:.9}
+.pcard-about-back{margin:10px 16px 16px;min-height:180px}
+.pcard-sponsor{position:absolute;left:16px;bottom:16px;display:flex;align-items:center;gap:10px}
+.pcard-sponsor img{height:32px;object-fit:contain}
+/* FAB */
+.pcard-fab{position:absolute;right:12px;bottom:12px;width:46px;height:46px;border-radius:999px;border:0;cursor:pointer;z-index:10;color:#061019;background:conic-gradient(from 220deg,var(--mw-neon),var(--mw-mint));display:grid;place-items:center;box-shadow:0 16px 28px color-mix(in srgb,var(--mw-mint) 35%,transparent),0 3px 0 rgba(0,0,0,.32),inset 0 0 0 1px rgba(255,255,255,.55)}
+.pcard-fab-icon{transition:transform 360ms cubic-bezier(.2,.8,0,1)}
+.pcard-fab-icon.rot{transform:rotate(180deg)}
+/* modal */
+.mw-modal{position:fixed;inset:0;display:grid;place-items:center;z-index:50}
+.mw-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);backdrop-filter:blur(2px)}
+.mw-modal-card{position:relative;z-index:60;width:min(92vw,420px);border-radius:14px;padding:16px;background:var(--panel);box-shadow:0 28px 60px rgba(0,0,0,.5),inset 0 0 0 1px var(--line)}
+.mw-modal-card h3{margin:0 0 10px;font:700 18px/1.2 "Roboto Condensed","Roboto",system-ui}
+.mw-form{display:grid;gap:10px}
+.mw-form label{display:grid;gap:4px;font-size:12px}
+.mw-form input{height:36px;border-radius:10px;border:1px solid var(--line-strong);padding:0 10px;background:#fff;color:#061019}
+.mw-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:12px}
 /* a11y */
-.sr-only{ position:absolute!important; height:1px; width:1px; overflow:hidden; clip:rect(1px,1px,1px,1px) }
-@media (prefers-reduced-motion:reduce){ .pcard,.pcard-fab-icon{ transition:none } }
+.sr-only{position:absolute!important;height:1px;width:1px;overflow:hidden;clip:rect(1px,1px,1px,1px)}
+@media (prefers-reduced-motion:reduce){.pcard,.pcard-fab-icon{transition:none}}

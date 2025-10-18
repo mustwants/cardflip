@@ -2,49 +2,43 @@ import { useEffect, useState } from "react";
 import ProFlipCard from "./components/ProFlipCard/ProFlipCard";
 import "./index.css";
 
-export default function App() {
-  const [theme, setTheme] = useState<"light" | "dark">("dark");
-
-  useEffect(() => {
-    document.documentElement.setAttribute("data-theme", theme);
-  }, [theme]);
+export default function App(){
+  const [theme,setTheme]=useState<"dark"|"light">("dark");
+  useEffect(()=>{document.documentElement.setAttribute("data-theme",theme)},[theme]);
 
   return (
     <div className="container">
-      <button
-        className="theme-toggle"
-        onClick={() => setTheme((t) => (t === "dark" ? "light" : "dark"))}
-        aria-label="Toggle color theme"
-        type="button"
-      >
-        {theme === "dark" ? "Switch to Light" : "Switch to Dark"}
+      <button className="theme-toggle" onClick={()=>setTheme(t=>t==="dark"?"light":"dark")}>
+        {theme==="dark"?"Light mode":"Dark mode"}
       </button>
 
       <ProFlipCard
-        width={480}
-        height={620}
         name="Anne Leanos"
         title="Broker / REALTOR® — BHHS Carolina Premier Properties"
         location="Wilmington, NC"
-        email="anneleanos@bhhscpp.com"
-        phone=""
         website="https://anneleanos.bhhscpp.com/"
-        serviceAffiliation="Veteran, Service Member, Military Spouse"
+        email="anneleanos@bhhscpp.com"
         headshotUrl="/images/AnneLeanos.jpg"
-        logoSmallUrl="/images/EXP.png"  /* replace with BHHS logo if available */
-        affiliationBadgeUrl="/images/MW Badge_Military Veteran.png"
-        sponsorLogoUrl="/images/trident.png"  /* put Trident Home Loans logo at public/images/trident.png */
-        about={`Anne is not your typical Broker/REALTOR®. A U.S. Naval Academy alum and Navy Reserve Captain with prior sales leadership at Caterpillar and Pepsi. Investor with rentals across TX, NC, TN, and KS. Community mentor at UNCW. Six years active duty and 20 in the reserves. Go Navy!`}
+        smallLogoUrl="/images/EXP.png"
+        tokens={[
+          { src: "/images/MW Badge_Military Spouse.png", alt: "Military Spouse" },
+          { src: "/images/MW Badge_Military Veteran.png", alt: "Military Veteran" },
+        ]}
+        serviceAffiliation="Veteran, Service Member, Military Spouse"
+        about={`Anne is not your typical Broker/REALTOR®. A U.S. Naval Academy alum who serves as a Captain in the reserves…`}
         social={{
           facebook: "https://www.facebook.com/LIVINGNWILMINGTONNC",
           instagram: "https://www.instagram.com/anne_leanos_livingnwilmington/",
           linkedin: "https://www.linkedin.com/in/anneleanos",
+          x: "https://www.mustwants.com/@AnneLeanos",
+          bluesky: "", pinterest: "", youtube: ""
         }}
-        connectButtonText="Connect with Anne"
-        connectToEmail="MustWants@MustWants.com"
+        sponsorLogoUrl="/images/trident.png"
+        sponsorHref="https://www.tridenthomeloans.com/"
       />
     </div>
   );
 }
+
 
 

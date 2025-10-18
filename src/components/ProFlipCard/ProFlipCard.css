@@ -24,6 +24,10 @@
 .pcard-front{ transform:rotateY(0deg) translateZ(0.6px);  }
 .pcard-back { transform:rotateY(180deg) translateZ(0.6px); }
 
+/* hard face visibility by state */
+.pcard[data-face="front"] .pcard-back  { visibility:hidden; pointer-events:none; }
+.pcard[data-face="back"]  .pcard-front { visibility:hidden; pointer-events:none; }
+
 /* opaque plate blocks any see-through */
 .pcard-plate{ position:absolute; inset:0; background:var(--panel); z-index:1; }
 .pcard-front>*:not(.pcard-plate), .pcard-back>*:not(.pcard-plate){ position:relative; z-index:2; }
@@ -47,7 +51,7 @@
 .pcard-token{ width:calc(var(--bannerH)*0.7); height:calc(var(--bannerH)*0.7); max-width:88px; max-height:88px;
   border-radius:999px; object-fit:contain; background:#fff; box-shadow:0 1px 3px rgba(0,0,0,.25), inset 0 0 0 1px var(--line); }
 
-/* header under ribbon — your target lift */
+/* header under ribbon — positioned per your “lift” */
 .pcard-top{
   position:relative; top:calc((var(--bannerH) + var(--ribbonH)) - 240px);
   z-index:8; display:grid; grid-template-columns:120px 1fr 74px; gap:1px; align-items:center;

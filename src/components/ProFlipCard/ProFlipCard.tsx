@@ -65,8 +65,8 @@ export default function ProFlipCard(p: Props) {
   const meshRefs = useRef<HTMLDivElement[]>([]);
   meshRefs.current = [];
 
-  const rafRef   = useRef<number | null>(null);
-  const progRef  = useRef(0);
+  const rafRef  = useRef<number | null>(null);
+  const progRef = useRef(0);
 
   const id     = useId();
   const arcId  = `${id}-arc`;
@@ -91,7 +91,7 @@ export default function ProFlipCard(p: Props) {
     [N]
   );
 
-  // diagonal travel start/end
+  // diagonal path
   const start = useMemo<[number, number]>(() => (
     grabCorner === "top-left" ? [0, 0] :
     grabCorner === "top-right" ? [1, 0] :
@@ -104,7 +104,6 @@ export default function ProFlipCard(p: Props) {
     grabCorner === "bottom-right" ? [0, 0] :
     [1, 0]
   ), [grabCorner]);
-
   const { dir, nrm } = useMemo((): { dir: [number, number]; nrm: [number, number] } => {
     const len = Math.hypot(end[0] - start[0], end[1] - start[1]) || 1;
     const d: [number, number] = [(end[0] - start[0]) / len, (end[1] - start[1]) / len];
@@ -118,7 +117,7 @@ export default function ProFlipCard(p: Props) {
   }, []);
   const clamp01 = useCallback((v: number) => Math.max(0, Math.min(1, v)), []);
 
-  // frame writer
+  // apply one frame
   const writeFrame = useCallback((prog: number) => {
     progRef.current = prog;
 
@@ -132,6 +131,7 @@ export default function ProFlipCard(p: Props) {
       cardRef.current.style.transform =
         `translateZ(${liftZ.toFixed(2)}px) rotateX(${twist.toFixed(2)}deg) rotateY(${rotY.toFixed(2)}deg)`;
 
+      // shadow bias
       const right = grabCorner.includes("right");
       const bottom = grabCorner.includes("bottom");
       const biasX = (right ? 1 : -1) * 6 * bell;
@@ -146,20 +146,7 @@ export default function ProFlipCard(p: Props) {
       cardRef.current.style.pointerEvents = edge ? "none" : "auto";
     }
 
-    // hard-hide inactive face; keep both fully opaque
-    if (frontRef.current && backRef.current) {
-      const frontOn = prog < 0.5;
-      frontRef.current.style.visibility = frontOn ? "visible" : "hidden";
-      backRef.current.style.visibility  = frontOn ? "hidden"  : "visible";
-      frontRef.current.style.pointerEvents = frontOn ? "auto" : "none";
-      backRef.current.style.pointerEvents  = frontOn ? "none" : "auto";
-      frontRef.current.style.zIndex = frontOn ? "5" : "1";
-      backRef.current.style.zIndex  = frontOn ? "1" : "5";
-      frontRef.current.style.opacity = "1";
-      backRef.current.style.opacity  = "1";
-    }
-
-    // curl mesh under content
+    // curl mesh under content only
     const sigma   = 0.18;
     const ampBase = 18 * curlIntensity;
     const tzBase  = 28 * curlIntensity;
@@ -236,6 +223,7 @@ export default function ProFlipCard(p: Props) {
     if (cardRef.current) {
       cardRef.current.style.setProperty("transform-style", "preserve-3d");
     }
+    // initial frame -> front visible
     writeFrame(0);
   }, [perspectivePx, writeFrame]);
 
@@ -274,6 +262,7 @@ export default function ProFlipCard(p: Props) {
               <svg className="pcard-avatar-arc" viewBox="0 0 106 106" aria-hidden="true">
                 <defs>
                   <clipPath id={clipId}><circle cx="53" cy="53" r="50" /></clipPath>
+                  {/* 7 → 3 o’clock path inside circle */}
                   <path id={arcId} d="M 22 86 A 41 41 0 0 0 98 53" />
                 </defs>
                 <g clipPath={`url(#${clipId})`}>
@@ -457,6 +446,7 @@ function icon(name: string) {
     default: return null;
   }
 }
+
 
 
 

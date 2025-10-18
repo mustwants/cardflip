@@ -21,7 +21,7 @@ function ThemeToggle(){
 
 export default function App(){
   return (
-    <div className="app">
+    <div className="app container">
       <ThemeToggle />
       <ProFlipCard
         name="Anne Leanos"
@@ -45,8 +45,9 @@ export default function App(){
           x:         "https://twitter.com/"
         }}
         sponsorLogoUrl="/images/trident.png"
-        sponsorHref="https://www.tridenthomeloans.com/"
-        /* motion params per spec */
+        sponsorHref="https://tridenthomeloans.com/"
+        connectToEmail="MustWants@MustWants.com"
+
         grabCorner="bottom-right"
         curlIntensity={0.9}
         durationMs={580}
@@ -60,6 +61,7 @@ export default function App(){
     </div>
   );
 }
+
 
 
 

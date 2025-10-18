@@ -15,8 +15,8 @@ export default function App() {
         phone="+1 (904) 555-0182"
         website="https://example.com/anne"
         headshotUrl="/images/AnneLeanos.jpg"
-        logoSmallUrl="/images/EXP.jpg"
-        affiliationBadgeUrl="/images/MW_Badge_Military_Veteran.png"
+        logoSmallUrl="/images/EXP.png"
+        affiliationBadgeUrl="/images/MW_Badge_Military Veteran.png"
         about={`Anne Leanos is a Military Spouse & Veteran advocate helping families PCS with clarity.
 She specializes in St. Johns County neighborhoods, new construction, and VA loan strategy.
 Client-first and data-driven.`}

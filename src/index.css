@@ -1,24 +1,69 @@
-:root{
-  --mw-green:#8ABA4E;
-  --mw-mint:#74E4B8;
-  --mw-neon:#D1EE00;
-  --mw-pink:#F20359;
-  --mw-black:#000000;
-  --mw-white:#ffffff;
-
-  --depth: 18px;            /* visual thickness */
+:root {
   --radius: 20px;
+  --depth: 18px;     /* visual thickness */
   --elev: 48px;
+  --font: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
 }
 
-html,body,#root{height:100%}
-body{
-  margin:0;
-  font-family: "Roboto", system-ui, Arial, sans-serif;
+/* Light theme */
+:root[data-theme="light"] {
+  --bg1: #f3f6fb;
+  --bg2: #e9eef7;
+  --fg:  #0f172a;
+
+  --accent1: #8ABA4E;  /* MustWants green */
+  --accent2: #74E4B8;  /* MustWants mint */
+  --accent3: #D1EE00;  /* neon */
+  --accent4: #F20359;  /* pink */
+  --panel: #ffffff;
+  --panel-weak: #f4f7fb;
+  --line: rgba(0,0,0,.08);
+  --line-strong: rgba(0,0,0,.12);
+}
+
+/* Dark theme */
+:root[data-theme="dark"] {
+  --bg1: #0A0E14;
+  --bg2: #06080B;
+  --fg:  #EAF3FF;
+
+  --accent1: #8ABA4E;
+  --accent2: #74E4B8;
+  --accent3: #D1EE00;
+  --accent4: #F20359;
+  --panel: #0F141C;
+  --panel-weak: #0B0F15;
+  --line: rgba(255,255,255,.08);
+  --line-strong: rgba(255,255,255,.12);
+}
+
+html, body, #root { height: 100%; }
+body {
+  margin: 0;
+  font-family: var(--font);
+  color: var(--fg);
   background:
-    radial-gradient(1200px 600px at 10% -20%, color-mix(in srgb, var(--mw-neon) 18%, transparent), transparent 60%),
-    radial-gradient(900px 520px at 110% 130%, color-mix(in srgb, var(--mw-mint) 16%, transparent), transparent 60%),
-    linear-gradient(180deg, #0A0E14 0%, #06080B 100%);
-  color: var(--mw-white);
+    radial-gradient(1200px 600px at 10% -20%, color-mix(in srgb, var(--accent3) 18%, transparent), transparent 60%),
+    radial-gradient(900px 520px at 110% 130%, color-mix(in srgb, var(--accent2) 16%, transparent), transparent 60%),
+    linear-gradient(180deg, var(--bg1), var(--bg2));
 }
 
+/* tiny utility */
+.container {
+  min-height: 100svh;
+  display: grid;
+  place-items: center;
+  gap: 16px;
+  padding: 24px;
+}
+
+/* theme toggle */
+.theme-toggle {
+  position: fixed;
+  top: 12px; right: 12px;
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 8px 12px; border-radius: 999px; border: 0; cursor: pointer;
+  color: #061019;
+  background: linear-gradient(135deg, var(--accent3), var(--accent2));
+  box-shadow: 0 12px 26px rgba(0,0,0,.25), inset 0 0 0 1px rgba(255,255,255,.55);
+}

@@ -1,46 +1,47 @@
 /*PATH src/components/ProFlipCard/ProFlipCard*/
-
-/* ===== Stage: deep perspective ===== */
+/* ===== Stage with deep perspective ===== */
 .pcard-stage{
-  perspective: 1800px;
-  perspective-origin: 50% 35%;
+  perspective: 2000px;
+  perspective-origin: 85% 90%; /* corner bias for blackjack feel */
   position: relative;
   isolation: isolate;
 }
 
-/* ===== Card body with thickness ===== */
+/* ===== Card body with thickness and corner pivot ===== */
 .pcard{
   position: relative;
-  width: 100%;
-  height: 100%;
+  width: 100%; height: 100%;
   transform-style: preserve-3d;
   border-radius: var(--radius);
-  transition: transform 820ms cubic-bezier(.18,.88,.08,1), filter 240ms ease;
+  transition: transform 900ms cubic-bezier(.18,.86,.06,1), filter 240ms ease;
   will-change: transform;
-  /* multi-shadow for depth */
+  transform-origin: 95% 95%; /* lower-right pivot */
   box-shadow:
     0 var(--elev) 80px rgba(0,0,0,.45),
     0 18px 40px rgba(0,0,0,.35),
-    inset 0 0 0 1px rgba(255,255,255,.06);
+    inset 0 0 0 1px var(--line);
   background: transparent;
 }
 
-/* simulated edge thickness */
+/* visual thickness */
 .pcard::before{
   content:"";
   position:absolute; inset:0;
   border-radius:var(--radius);
-  background: #0b0f15;
+  background: var(--panel-weak);
   transform: translateZ(calc(-1 * var(--depth)));
-  box-shadow: inset 0 0 0 1px rgba(255,255,255,.06);
+  box-shadow: inset 0 0 0 1px var(--line);
 }
 
-/* flip */
-.pcard.is-flipped{ transform: rotateY(180deg) }
+/* blackjack flip flourish from the corner */
+.pcard.is-flipped{
+  /* rotate around the corner with a slight table-tilt and tiny twist */
+  transform: rotateY(180deg) rotateX(1.5deg) rotateZ(-0.3deg) translateZ(0.0001px);
+}
 
-/* subtle tilt on hover (front only) */
+/* subtle hover pre-tilt when not flipped */
 .pcard-stage:hover .pcard:not(.is-flipped){
-  transform: translateZ(0.0001px) rotateX(.6deg) rotateY(.7deg);
+  transform: rotateX(.6deg) rotateY(.8deg);
 }
 
 /* ===== Faces ===== */
@@ -54,23 +55,21 @@
   transform-style:preserve-3d;
 }
 
-/* FRONT: MustWants gradient */
+/* FRONT surface (brand accents) */
 .pcard-front{
   background:
-    radial-gradient(1200px 520px at 12% -25%, color-mix(in srgb, var(--mw-neon) 16%, transparent), transparent 60%),
-    radial-gradient(1000px 520px at 112% 128%, color-mix(in srgb, var(--mw-mint) 18%, transparent), transparent 60%),
-    linear-gradient(180deg, #0F141C 0%, #0B0F15 100%);
-  color:#EFF7FF;
+    radial-gradient(1200px 520px at 12% -25%, color-mix(in srgb, var(--accent3) 16%, transparent), transparent 60%),
+    radial-gradient(1000px 520px at 112% 128%, color-mix(in srgb, var(--accent2) 18%, transparent), transparent 60%),
+    linear-gradient(180deg, var(--panel), var(--panel-weak));
   transform: translateZ(calc(var(--depth) / 2));
 }
 
-/* BACK: inverse with pink accents */
+/* BACK surface */
 .pcard-back{
   background:
-    radial-gradient(1100px 520px at -10% -15%, color-mix(in srgb, var(--mw-pink) 16%, transparent), transparent 60%),
-    radial-gradient(1000px 520px at 120% 130%, color-mix(in srgb, var(--mw-mint) 14%, transparent), transparent 60%),
-    linear-gradient(180deg, #10151C 0%, #0B0F15 100%);
-  color:#EAF3FF;
+    radial-gradient(1100px 520px at -10% -15%, color-mix(in srgb, var(--accent4) 16%, transparent), transparent 60%),
+    radial-gradient(1000px 520px at 120% 130%, color-mix(in srgb, var(--accent2) 14%, transparent), transparent 60%),
+    linear-gradient(180deg, var(--panel), var(--panel-weak));
   transform: rotateY(180deg) translateZ(calc(var(--depth) / 2));
 }
 
@@ -81,20 +80,20 @@
   align-items:center;
   gap:16px;
   padding:18px 18px 8px;
+  color: var(--fg);
 }
 
 /* Avatar ring */
 .pcard-avatar-wrap{
-  position:relative;
-  width:116px; height:116px; border-radius:999px;
+  position:relative; width:116px; height:116px; border-radius:999px;
   display:grid; place-items:center; padding:4px;
-  background: linear-gradient(135deg, var(--mw-mint), var(--mw-neon));
-  box-shadow: 0 10px 24px color-mix(in srgb, var(--mw-mint) 28%, transparent);
+  background: linear-gradient(135deg, var(--accent2), var(--accent3));
+  box-shadow: 0 10px 24px color-mix(in srgb, var(--accent2) 28%, transparent);
 }
 .pcard-avatar{
   width:100%; height:100%; border-radius:999px; object-fit:cover;
   background:#0b0e13;
-  box-shadow: inset 0 0 0 1px rgba(255,255,255,.08);
+  box-shadow: inset 0 0 0 1px var(--line);
 }
 
 /* badge on avatar */
@@ -106,47 +105,48 @@
 
 /* name block */
 .pcard-id{min-width:0}
-.pcard-name{
-  margin:0;
-  font-family:"Roboto Condensed", "Roboto", system-ui, Arial, sans-serif;
-  font-weight:700;
-  font-size:24px; letter-spacing:.2px;
-}
-.pcard-title{margin:4px 0 0; opacity:.9; font-size:14px}
+.pcard-name{ margin:0; font-weight:800; font-size:24px; letter-spacing:.2px; color:var(--fg); }
+.pcard-title{margin:4px 0 0; opacity:.9; font-size:14px; color:var(--fg)}
+.pcard-loc{margin:6px 0 0;opacity:.85;font-size:13px;color:var(--fg)}
 
 /* logo box */
 .pcard-logo{
   width:68px; height:68px; object-fit:contain; justify-self:end;
-  background: rgba(255,255,255,.04);
+  background: color-mix(in srgb, var(--panel), var(--fg) 4%);
   border-radius:14px; padding:6px;
-  box-shadow: 0 8px 16px rgba(0,0,0,.35), inset 0 0 0 1px rgba(255,255,255,.08);
+  box-shadow: 0 8px 16px rgba(0,0,0,.25), inset 0 0 0 1px var(--line);
 }
 
-/* key-value + CTAs */
+/* front body */
 .pcard-front-body{padding:8px 18px 18px; display:grid; gap:16px}
+.pcard-badges{display:flex;gap:8px;flex-wrap:wrap}
+.pcard-badge{
+  padding:4px 10px;border-radius:999px;font-size:12px;font-weight:700;
+  background: color-mix(in srgb, var(--accent4) 16%, transparent);
+  color: var(--fg);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent4) 50%, transparent);
+}
 .pcard-kv{
   list-style:none; margin:0; padding:0; border-radius:14px;
-  background: rgba(255,255,255,.04);
-  box-shadow: inset 0 0 0 1px rgba(255,255,255,.08);
+  background: color-mix(in srgb, var(--panel), var(--fg) 3%);
+  box-shadow: inset 0 0 0 1px var(--line);
+  color:var(--fg);
 }
-.pcard-kv li{
-  display:grid; grid-template-columns:110px 1fr; gap:10px;
-  padding:12px 14px; align-items:center;
-}
-.pcard-kv li+li{ border-top:1px dashed rgba(255,255,255,.10) }
+.pcard-kv li{display:grid; grid-template-columns:110px 1fr; gap:10px; padding:12px 14px; align-items:center}
+.pcard-kv li+li{ border-top:1px dashed var(--line-strong) }
 .pcard-kv span{ opacity:.75; font-size:12px }
-.pcard-kv a{ color: color-mix(in srgb, var(--mw-mint) 70%, #9ee7ff); text-decoration:none; }
-.pcard-kv a:hover{ text-decoration:underline }
+.pcard-kv a{ color: color-mix(in srgb, var(--accent2) 70%, #227); text-decoration:none }
+.pcard-kv a:hover{text-decoration:underline}
 
-/* MustWants 3D pill buttons */
+/* 3D pill buttons */
 .pcard-cta-row{ display:flex; gap:12px; flex-wrap:wrap }
 .pcard-btn{
-  height:38px; padding:0 16px; border-radius:999px; font-weight:700;
-  color:#071018; text-decoration:none;
-  background: linear-gradient(135deg, var(--mw-neon), var(--mw-mint));
+  height:38px; padding:0 16px; border-radius:999px; font-weight:700; border:0;
+  color:#071018; text-decoration:none; cursor:pointer;
+  background: linear-gradient(135deg, var(--accent3), var(--accent2));
   box-shadow:
-    0 14px 28px color-mix(in srgb, var(--mw-mint) 35%, transparent),
-    0 3px 0 color-mix(in srgb, #000 30%, transparent),
+    0 14px 28px color-mix(in srgb, var(--accent2) 35%, transparent),
+    0 3px 0 color-mix(in srgb, #000 25%, transparent),
     inset 0 0 0 1px rgba(255,255,255,.55);
   transform: translateZ(2px);
 }
@@ -154,46 +154,52 @@
 .pcard-btn:active{ transform: translateY(1px) translateZ(1px) }
 
 /* ===== Back content ===== */
-.pcard-back-head{ padding:18px 18px 8px }
-.pcard-back-title{
-  margin:0;
-  font-family:"Roboto Condensed", "Roboto", system-ui, Arial, sans-serif;
-  font-weight:700; font-size:18px;
-}
+.pcard-back-head{ padding:18px 18px 8px; color:var(--fg) }
+.pcard-back-title{ margin:0; font-weight:800; font-size:18px; }
 
 .pcard-about{
   margin:0 18px; padding:12px 14px; border-radius:12px;
-  background: rgba(255,255,255,.05);
-  box-shadow: inset 0 0 0 1px rgba(255,255,255,.08);
-  max-height: 300px; overflow:auto; line-height:1.55;
+  background: color-mix(in srgb, var(--panel), var(--fg) 4%);
+  box-shadow: inset 0 0 0 1px var(--line);
+  max-height: 300px; overflow:auto; line-height:1.55; color:var(--fg);
 }
 
 /* back links */
-.pcard-links{ display:flex; flex-wrap:wrap; gap:10px; padding:14px 18px 18px }
+.pcard-links{ display:flex; flex-wrap:wrap; gap:10px; padding:14px 18px 0 }
 .pcard-link{
   height:34px; padding:0 12px; border-radius:10px; display:inline-flex; align-items:center;
-  background: rgba(255,255,255,.08);
-  color:#EAF6FF; text-decoration:none;
-  box-shadow: inset 0 0 0 1px rgba(255,255,255,.12);
+  background: color-mix(in srgb, var(--panel), var(--fg) 8%);
+  color:var(--fg); text-decoration:none;
+  box-shadow: inset 0 0 0 1px var(--line-strong);
 }
-.pcard-link:hover{ background: rgba(255,255,255,.14) }
+.pcard-link:hover{ background: color-mix(in srgb, var(--panel), var(--fg) 14%) }
 
-/* ===== Flip FAB: 3D circular control ===== */
+/* sponsor row at bottom-left of BACK */
+.pcard-sponsor{
+  display:flex; align-items:center; gap:10px;
+  padding:12px 18px 18px; color:var(--fg);
+}
+.pcard-sponsor img{
+  width:110px; height:32px; object-fit:contain;
+  filter: drop-shadow(0 4px 10px rgba(0,0,0,.25));
+}
+
+/* ===== Flip FAB (corner) ===== */
 .pcard-fab{
   position:absolute; right:14px; bottom:14px;
   width:48px; height:48px; border-radius:999px; border:0; cursor:pointer;
   color:#061019;
-  background: conic-gradient(from 220deg, var(--mw-neon), var(--mw-mint));
+  background: conic-gradient(from 220deg, var(--accent3), var(--accent2));
   display:grid; place-items:center;
   box-shadow:
-    0 18px 34px color-mix(in srgb, var(--mw-mint) 35%, transparent),
+    0 18px 34px color-mix(in srgb, var(--accent2) 35%, transparent),
     0 4px 0 rgba(0,0,0,.35),
     inset 0 0 0 1px rgba(255,255,255,.55);
 }
 .pcard-fab:focus-visible{
   outline:0; box-shadow:
-    0 0 0 3px color-mix(in srgb, var(--mw-mint) 55%, transparent),
-    0 18px 34px color-mix(in srgb, var(--mw-mint) 35%, transparent);
+    0 0 0 3px color-mix(in srgb, var(--accent2) 55%, transparent),
+    0 18px 34px color-mix(in srgb, var(--accent2) 35%, transparent);
 }
 .pcard-fab-icon{ transition: transform 420ms cubic-bezier(.2,.8,0,1) }
 .pcard-fab-icon.rot{ transform: rotate(180deg) }
@@ -207,39 +213,3 @@
 @media (prefers-reduced-motion:reduce){
   .pcard,.pcard-fab-icon{transition:none}
 }
-
-/* badges and location */
-.pcard-badges{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 6px 0}
-.pcard-badge{
-  padding:4px 10px;border-radius:999px;font-size:12px;font-weight:700;
-  background: rgba(242,3,89,.16); color:#fff; box-shadow: inset 0 0 0 1px rgba(242,3,89,.35);
-}
-.pcard-loc{margin:6px 0 0;opacity:.85;font-size:13px}
-
-/* CTA emphasis button uses brand gradient */
-.pcard-btn-cta{
-  background: linear-gradient(135deg, var(--mw-neon), var(--mw-mint));
-}
-.pcard-btn-cta:disabled{filter:grayscale(.6);opacity:.7;cursor:not-allowed}
-
-/* ===== Modal ===== */
-.mw-modal{position:fixed;inset:0;display:grid;place-items:center;z-index:50}
-.mw-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);backdrop-filter:blur(2px)}
-.mw-modal-card{
-  position:relative; z-index:60; width:min(92vw,420px);
-  border-radius:16px; padding:18px;
-  background: linear-gradient(180deg,#0F141C,#0B0F15);
-  color:#EAF3FF; box-shadow:0 28px 60px rgba(0,0,0,.5), inset 0 0 0 1px rgba(255,255,255,.08);
-}
-.mw-modal-card h3{
-  margin:0 0 10px 0;
-  font-family:"Roboto Condensed","Roboto",system-ui,Arial,sans-serif;
-  font-size:20px; font-weight:700;
-}
-.mw-form{display:grid;gap:10px;margin:10px 0 14px}
-.mw-form label{display:grid;gap:6px;font-size:12px;opacity:.9}
-.mw-form input{
-  height:38px;border-radius:10px;border:0;padding:0 12px;color:#071018;
-  background:#fff; box-shadow:inset 0 0 0 2px color-mix(in srgb, var(--mw-mint) 50%, #9ad7ff);
-}
-.mw-actions{display:flex;gap:10px;justify-content:flex-end}

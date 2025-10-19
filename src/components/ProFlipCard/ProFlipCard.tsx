@@ -1,4 +1,3 @@
-//PATH src/components/ProFlipCard/ProFlipCard.tsx
 // PATH: src/components/ProFlipCard/ProFlipCard.tsx
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import "./ProFlipCard.css";
@@ -27,12 +26,10 @@ type Props = {
   connectToEmail?: string;
 
   grabCorner?: GrabCorner;
-  curlIntensity?: number;     // kept for API compatibility
   durationMs?: number;
   perspectivePx?: number;
   overshootDeg?: number;
   shadowPeak?: number;
-  slices?: number;            // kept for API compatibility
   liftZPx?: number;
   diagonalTwistDeg?: number;
 };
@@ -58,10 +55,8 @@ export default function ProFlipCard(p: Props) {
 
   const stageRef = useRef<HTMLDivElement | null>(null);
   const cardRef  = useRef<HTMLDivElement | null>(null);
-  const frontRef = useRef<HTMLElement | null>(null);
-  const backRef  = useRef<HTMLElement | null>(null);
+  const shadowRef= useRef<HTMLDivElement | null>(null);
 
-  // animation progress 0..1
   const progRef = useRef(0);
   const rafRef  = useRef<number | null>(null);
 
@@ -73,7 +68,6 @@ export default function ProFlipCard(p: Props) {
     typeof window !== "undefined" &&
     window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
 
-  // split About into front/back
   const [aboutFront, aboutBack] = useMemo(() => {
     const limit = 420, a = about.trim();
     if (a.length <= limit) return [a, ""];
@@ -81,48 +75,44 @@ export default function ProFlipCard(p: Props) {
     return [a.slice(0, cut).trim(), a.slice(cut).trim()];
   }, [about]);
 
-  // ---- easing
   const clamp01 = useCallback((v: number) => Math.max(0, Math.min(1, v)), []);
   const ease = useCallback((t: number) => {
-    // cubic-bezier(0.2,0.7,0.2,1) approximation
     const u = 1 - t;
     return 1 - u*u*(1 - u*0.3);
   }, []);
 
-  // ---- write one frame (opaque faces, no transparency)
-  const writeFrame = useCallback((prog: number) => {
+  const writeFrame = useCallback((prog: number, isFinal = false) => {
     progRef.current = prog;
     const bell   = Math.sin(Math.PI * prog);
     const twist  = diagonalTwistDeg * Math.max(0, Math.min(1, (prog - 0.2) / 0.5));
     const liftZ  = liftZPx * bell;
     const rotY   = prog * 180;
 
-    // keep center anchored, add slight toward-viewer cue
-    if (cardRef.current) {
-      cardRef.current.style.transform =
+    const card = cardRef.current;
+    if (card) {
+      card.style.transform =
         `translateZ(${liftZ.toFixed(2)}px) rotateX(${twist.toFixed(2)}deg) rotateY(${rotY.toFixed(2)}deg)`;
+      const edge = prog > 0.45 && prog < 0.55;
+      card.dataset.edge = edge ? "true" : "false";
+      card.style.pointerEvents = edge ? "none" : "auto";
+      if (isFinal) { card.dataset.edge = "false"; card.style.pointerEvents = "auto"; }
+    }
 
+    const sh = shadowRef.current;
+    if (sh) {
       const right = grabCorner.includes("right");
       const bottom = grabCorner.includes("bottom");
       const biasX = (right ? 1 : -1) * 6 * bell;
       const biasY = (bottom ? 1 : -1) * 6 * bell;
       const scale = 1 + (shadowPeak - 1) * bell;
-      cardRef.current.style.filter =
-        `drop-shadow(${biasX}px ${24 + biasY}px ${Math.max(24, 40 / scale)}px rgba(0,0,0,.5))`;
-
-      // lock pointer-events near edge-on to prevent mis-hits
-      const edge = prog > 0.45 && prog < 0.55;
-      cardRef.current.dataset.edge = edge ? "true" : "false";
-      // hard-face visibility switch (no alpha)
-      cardRef.current.dataset.face = prog < 0.5 ? "front" : "back";
-      cardRef.current.style.pointerEvents = edge ? "none" : "auto";
+      sh.style.transform = `translate(${biasX}px, ${24 + biasY}px) scale(${scale})`;
+      sh.style.opacity = String(0.9 - 0.25 * Math.abs(0.5 - prog) * 2);
     }
   }, [diagonalTwistDeg, grabCorner, liftZPx, shadowPeak]);
 
-  // ---- drive animation
   const runAnimation = useCallback((to: number) => {
     if (prefersReduced) {
-      writeFrame(to);
+      writeFrame(to, true);
       setAnimating(false);
       return;
     }
@@ -137,11 +127,11 @@ export default function ProFlipCard(p: Props) {
       const overshoot = (overshootDeg / 180) * Math.sin(Math.PI * e) * (to > from ? 1 : -1);
       let v = from + (to - from) * (e + overshoot);
       v = Math.max(0, Math.min(1, v));
-      writeFrame(v);
-      if (t < 1) {
+      const final = t >= 1;
+      writeFrame(final ? to : v, final);
+      if (!final) {
         rafRef.current = requestAnimationFrame(step);
       } else {
-        writeFrame(to);
         setAnimating(false);
       }
     };
@@ -151,11 +141,6 @@ export default function ProFlipCard(p: Props) {
   }, [clamp01, durationMs, ease, overshootDeg, prefersReduced, writeFrame]);
 
   useEffect(() => {
-    runAnimation(showBack ? 1 : 0);
-    return () => { if (rafRef.current !== null) cancelAnimationFrame(rafRef.current); };
-  }, [showBack, runAnimation]);
-
-  useEffect(() => {
     if (stageRef.current) {
       stageRef.current.style.setProperty("perspective", `${perspectivePx}px`);
       stageRef.current.style.setProperty("perspective-origin", "50% 50%");
@@ -163,11 +148,13 @@ export default function ProFlipCard(p: Props) {
     if (cardRef.current) {
       cardRef.current.style.setProperty("transform-style", "preserve-3d");
     }
-    // initial frame -> front visible
-    writeFrame(0);
-  }, [perspectivePx, writeFrame]);
+    writeFrame(showBack ? 1 : 0, true);
+    return () => { if (rafRef.current !== null) cancelAnimationFrame(rafRef.current); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  // social icons
+  useEffect(() => { runAnimation(showBack ? 1 : 0); }, [showBack, runAnimation]);
+
   const soc = [
     { k: "facebook",  href: social.facebook,  l: "Facebook",  svg: icon("facebook") },
     { k: "instagram", href: social.instagram, l: "Instagram", svg: icon("instagram") },
@@ -180,15 +167,17 @@ export default function ProFlipCard(p: Props) {
 
   return (
     <div ref={stageRef} className="pcard-stage">
+      <div ref={shadowRef} className="pcard-shadow" aria-hidden="true" />
+
       <div
         ref={cardRef}
         className={`pcard ${animating ? "is-animating" : ""}`}
         aria-label="Profile card"
         role="group"
+        data-edge="false"
       >
         {/* FRONT */}
-        <section ref={frontRef} className="pcard-face pcard-front" aria-label="Front">
-          {/* Opaque plate guarantees no transparency */}
+        <section className="pcard-face pcard-front" aria-label="Front">
           <div className="pcard-plate" aria-hidden="true"></div>
 
           <div className="pcard-banner-top">
@@ -201,7 +190,6 @@ export default function ProFlipCard(p: Props) {
           <header className="pcard-top">
             <div className="pcard-avatar-wrap">
               <img className="pcard-avatar" src={headshotUrl} alt={`${name} headshot`} />
-              {/* Curved banner text inside circle, 7→3 o'clock */}
               <svg className="pcard-avatar-arc" viewBox="0 0 106 106" aria-hidden="true">
                 <defs>
                   <clipPath id={clipId}><circle cx="53" cy="53" r="50" /></clipPath>
@@ -252,19 +240,23 @@ export default function ProFlipCard(p: Props) {
               className="pcard-btn flip-btn"
               aria-pressed={showBack}
               data-selected={showBack}
-              onClick={() => { if (!animating) setShowBack(!showBack); }}
-              onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); if (!animating) setShowBack(!showBack); } }}
+              onClick={() => { if (!animating) setShowBack(true); }}
+              onKeyDown={(e) => { if ((e.key === "Enter" || e.key === " ") && !animating) { e.preventDefault(); setShowBack(true); } }}
               disabled={animating}
-            >{showBack ? "Flip Back" : "Flip"}</button>
+            >Flip</button>
           </div>
         </section>
 
-        {/* BACK (separate face; opaque; pre-rotated) */}
-        <section ref={backRef} className="pcard-face pcard-back" aria-label="Back">
-          {/* Opaque plate guarantees no see-through */}
+        {/* BACK */}
+        <section className="pcard-face pcard-back" aria-label="Back">
           <div className="pcard-plate" aria-hidden="true"></div>
 
-          <div className="pcard-banner-top"></div>
+          {/* Back banner with tokens same as front */}
+          <div className="pcard-banner-top">
+            <div className="pcard-banner-tokens">
+              {tokens.map((t, i) => (<img key={i} className="pcard-token" src={t.src} alt={t.alt} />))}
+            </div>
+          </div>
           <div className="pcard-banner"></div>
 
           <div className="pcard-back-head">
@@ -280,23 +272,29 @@ export default function ProFlipCard(p: Props) {
             </div>
           </div>
 
+          {/* Sponsor bottom-left, logo under label */}
           <div className="pcard-sponsor">
-            <span>Sponsored/Affiliated w/</span>
-            {sponsorHref
-              ? <a className="pcard-btn small" href={sponsorHref} target="_blank" rel="noopener noreferrer">
-                  {sponsorLogoUrl ? <img src={sponsorLogoUrl} alt="Sponsor" /> : "Visit"}
-                </a>
-              : sponsorLogoUrl ? <img src={sponsorLogoUrl} alt="Sponsor" /> : null}
+            <span className="pcard-sponsor-label">Recommended/Sponsored/Affiliated</span>
+            {sponsorHref ? (
+              <a className="pcard-sponsor-logo" href={sponsorHref} target="_blank" rel="noopener noreferrer" aria-label="Sponsor">
+                {sponsorLogoUrl ? <img src={sponsorLogoUrl} alt="Sponsor" /> : <span>Visit</span>}
+              </a>
+            ) : (
+              sponsorLogoUrl ? <div className="pcard-sponsor-logo"><img src={sponsorLogoUrl} alt="Sponsor" /></div> : null
+            )}
           </div>
 
-          <div className="pcard-footer">
-            <button className="pcard-btn" onClick={() => setIsModalOpen(true)}>Connect with {name.split(" ")[0]}</button>
+          {/* Footer: center connect; flip back pinned right */}
+          <div className="pcard-footer pcard-footer--back">
+            <button className="pcard-btn" onClick={() => setIsModalOpen(true)}>
+              Connect with {name.split(" ")[0]}
+            </button>
             <button
-              className="pcard-btn flip-btn"
-              aria-pressed={showBack}
-              data-selected={showBack}
-              onClick={() => { if (!animating) setShowBack(!showBack); }}
-              onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); if (!animating) setShowBack(!showBack); } }}
+              className="pcard-btn flip-btn pcard-flip-right"
+              aria-pressed={!showBack}
+              data-selected={!showBack}
+              onClick={() => { if (!animating) setShowBack(false); }}
+              onKeyDown={(e) => { if ((e.key === "Enter" || e.key === " ") && !animating) { e.preventDefault(); setShowBack(false); } }}
               disabled={animating}
             >Flip Back</button>
           </div>
@@ -310,7 +308,6 @@ export default function ProFlipCard(p: Props) {
           onClose={() => setIsModalOpen(false)}
         />
       )}
-      <p className="sr-only">One tap flips. Back is opaque and interactive. Reduced motion swaps instantly.</p>
     </div>
   );
 }
@@ -345,7 +342,7 @@ function ConnectModal({
           <label>Email     <input value={email} onChange={e => setEmail(e.target.value)} type="email" /></label>
           <label>Phone     <input value={phone} onChange={e => setPhone(e.target.value)} /></label>
         </div>
-        <div className="mw-actions" style={{ display: "flex", gap: 8, marginTop: 12, justifyContent: "flex-end" }}>
+        <div style={{ display: "flex", gap: 8, marginTop: 12, justifyContent: "flex-end" }}>
           <button className="pcard-btn small" onClick={onClose} type="button">Cancel</button>
           <button className="pcard-btn small" onClick={send}  type="button" disabled={!(first && last && email)}>Send</button>
         </div>
@@ -371,9 +368,4 @@ function icon(name: string) {
     default: return null;
   }
 }
-
-
-
-
-
 

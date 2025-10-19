@@ -118,49 +118,92 @@
 /* body with ample bottom padding so footer stack never collides */
 .pcard-body--back{
   margin-top:-8px;
-  padding:8px 16px 260px;   /* ↑ enough space for label + logo + actions */
+  padding:8px 16px 120px;
   display:grid; gap:12px; z-index:8;
 }
 .pcard-about-back{
-  min-height:180px; border-radius:12px; padding:12px;
+  min-height:120px; border-radius:12px; padding:12px;
   background:color-mix(in srgb,var(--panel),var(--fg) 4%); box-shadow:inset 0 0 0 1px var(--line);
 }
 
-/* footer stack (centered) ABOVE the bottom actions */
-.pcard-back{ position:relative; }
-
-/* label + logo group */
-.pcard-back-footer{
-  position:absolute; left:16px; right:16px;
-  bottom:120px;                 /* raise/lower this to move group */
-  z-index:40;
-  display:flex; flex-direction:column; align-items:center; justify-content:flex-end;
-  row-gap:10px;
+.pcard-back {
+  position: relative;
 }
 
-/* label above logo */
-.pcard-back-footer__label{
-  font:700 12px/1.2 "Roboto Condensed","Roboto",system-ui;
-  text-align:center; letter-spacing:.25px; opacity:.95; white-space:nowrap;
+.pcard-back .pcard-back-footer {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 78px !important;      /* 30px + 48px */
+  transform: none !important;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  row-gap: 6px;
+  text-align: center;
+  padding: 0 16px;
 }
 
-/* centered logo button */
-.pcard-sponsor{ display:flex; justify-content:center; width:100%; }
-.pcard-sponsor-logo{
-  display:inline-flex; align-items:center; justify-content:center; gap:10px;
-  padding:8px 14px; border-radius:10px;
-  background:color-mix(in srgb,var(--panel),var(--fg) 4%); box-shadow:inset 0 0 0 1px var(--line);
+.pcard-back .pcard-back-footer__label{
+  font: 700 13px/1.4 "Roboto Condensed", "Roboto", system-ui;
+  display:block;
+  margin-top: -48px !important; /* lift label by 0.5" */
+  letter-spacing: .3px;
+  opacity:.95;
+  white-space: nowrap;
 }
-.pcard-sponsor-logo img{ height:44px; max-width:100%; object-fit:contain; display:block; }
 
-/* bottom actions (single row, inside card) */
-.pcard-actions{
-  position:absolute; left:16px; right:16px; bottom:24px;
-  display:flex; justify-content:center; align-items:center; gap:12px; z-index:41; flex-wrap:wrap;
+.pcard-sponsor {
+  display: flex;
+  justify-content: center;
+  width: 100%;
 }
-.pcard-actions .pcard-btn{ min-width:160px; height:36px; }
 
-/* accessibility */
+.pcard-sponsor-logo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 12px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--panel), var(--fg) 4%);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+
+.pcard-sponsor-logo img {
+  height: 40px;
+  max-width: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.pcard-actions {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+  z-index: 41;
+  flex-wrap: wrap;
+  padding: 0 16px;
+}
+
+.pcard-actions .pcard-btn {
+  min-width: 160px;
+  height: 40px;
+  font-size: 14px;
+  border-radius: 8px;
+}
+
+/* FORCE footer 0.5" higher on back face */
+.pcard-back.pcard-face .pcard-back-footer{
+  bottom: 78px !important;     /* 30px + 48px */
+  transform: none !important;
+}
+
 @media (prefers-reduced-motion:reduce){ .pcard, .pcard-btn{ transition:none; } }
-
 

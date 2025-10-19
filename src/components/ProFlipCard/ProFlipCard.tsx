@@ -39,7 +39,6 @@ export default function ProFlipCard(p: Props) {
     name, title, location, website, email, phone, about, headshotUrl, smallLogoUrl,
     tokens = [], social = {},
     sponsorLogoUrl, sponsorHref, connectToEmail = "MustWants@MustWants.com",
-
     grabCorner = "bottom-right",
     durationMs = 580,
     perspectivePx = 1200,
@@ -150,7 +149,7 @@ export default function ProFlipCard(p: Props) {
     }
     writeFrame(showBack ? 1 : 0, true);
     return () => { if (rafRef.current !== null) cancelAnimationFrame(rafRef.current); };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => { runAnimation(showBack ? 1 : 0); }, [showBack, runAnimation]);
@@ -190,20 +189,47 @@ export default function ProFlipCard(p: Props) {
           <header className="pcard-top">
             <div className="pcard-avatar-wrap">
               <img className="pcard-avatar" src={headshotUrl} alt={`${name} headshot`} />
-              <svg className="pcard-avatar-arc" viewBox="0 0 106 106" aria-hidden="true">
-                <defs>
-                  <clipPath id={clipId}><circle cx="53" cy="53" r="50" /></clipPath>
-                  <path id={arcId} d="M 22 86 A 41 41 0 0 0 98 53" />
-                </defs>
-                <g clipPath={`url(#${clipId})`}>
-                  <use href={`#${arcId}`} className="arc-stroke" />
-                  <text className="arc-text">
-                    <textPath href={`#${arcId}`} startOffset="52%" textAnchor="middle" dominantBaseline="middle" dy="-0.5">
-                      Real Estate Agent
-                    </textPath>
-                  </text>
-                </g>
-              </svg>
+
+              {/* Bottom-rim arc: same circle (cx=53, cy=53, r=50), 7 → 3 o’clock. */}
+<svg
+  className="pcard-avatar-arc"
+  viewBox="0 0 106 106"
+  preserveAspectRatio="xMidYMid meet"
+  aria-hidden="true"
+>
+  <defs>
+    <clipPath id={clipId}>
+      <circle cx="53" cy="53" r="50" />
+    </clipPath>
+  </defs>
+
+  <g clipPath={`url(#${clipId})`}>
+    {/* Bottom rim, inset 4px: 7°→6°→3° on r=46 */}
+    {/* 7=(30,92.8371685741), 6=(53,99), 3=(99,53) */}
+    <path
+      id={arcId}
+      className="arc-stroke"
+      d="
+        M 30 92.8371685741
+        A 46 46 0 0 0 53 99
+        A 46 46 0 0 0 99 53
+      "
+    />
+    <text className="arc-text">
+      <textPath
+        href={`#${arcId}`}
+        startOffset="50%"
+        textAnchor="middle"
+        dominantBaseline="middle"
+        dy="-0.6"
+      >
+        Real Estate Agent
+      </textPath>
+    </text>
+  </g>
+</svg>
+
+
             </div>
 
             <div className="pcard-id">
@@ -212,10 +238,28 @@ export default function ProFlipCard(p: Props) {
               {location && <p className="pcard-loc">{location}</p>}
               {website && <a className="pcard-website" href={website} target="_blank" rel="noopener noreferrer">{website}</a>}
               <div className="pcard-social">
-                {soc.map(s => s.href
-                  ? <a key={s.k} className="pcard-soc" href={s.href!} target="_blank" rel="noopener noreferrer" aria-label={s.l}>{s.svg}</a>
-                  : <span key={s.k} className="pcard-soc is-disabled" aria-hidden="true">{s.svg}</span>)}
-              </div>
+  {soc.map((s) => {
+    const hasHttps = typeof s.href === "string" && s.href.startsWith("https://");
+
+    return hasHttps ? (
+      <a
+        key={s.k}
+        className={`pcard-soc soc-${s.k}`}
+        href={s.href!}
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label={s.l}
+      >
+        {s.svg}
+      </a>
+    ) : (
+      <span key={s.k} className="pcard-soc is-disabled" aria-hidden="true">
+        {s.svg}
+      </span>
+    );
+  })}
+</div>
+
             </div>
 
             {smallLogoUrl && <img className="pcard-logo" src={smallLogoUrl} alt="Brokerage logo" />}
@@ -251,7 +295,6 @@ export default function ProFlipCard(p: Props) {
         <section className="pcard-face pcard-back" aria-label="Back">
           <div className="pcard-plate" aria-hidden="true"></div>
 
-          {/* Back banner with tokens same as front */}
           <div className="pcard-banner-top">
             <div className="pcard-banner-tokens">
               {tokens.map((t, i) => (<img key={i} className="pcard-token" src={t.src} alt={t.alt} />))}
@@ -272,7 +315,6 @@ export default function ProFlipCard(p: Props) {
             </div>
           </div>
 
-          {/* Sponsor bottom-left, logo under label */}
           <div className="pcard-sponsor">
             <span className="pcard-sponsor-label">Recommended/Sponsored/Affiliated</span>
             {sponsorHref ? (
@@ -284,13 +326,12 @@ export default function ProFlipCard(p: Props) {
             )}
           </div>
 
-          {/* Footer: center connect; flip back pinned right */}
-          <div className="pcard-footer pcard-footer--back">
+          <div className="pcard-actions">
             <button className="pcard-btn" onClick={() => setIsModalOpen(true)}>
               Connect with {name.split(" ")[0]}
             </button>
             <button
-              className="pcard-btn flip-btn pcard-flip-right"
+              className="pcard-btn flip-btn"
               aria-pressed={!showBack}
               data-selected={!showBack}
               onClick={() => { if (!animating) setShowBack(false); }}
@@ -368,4 +409,3 @@ function icon(name: string) {
     default: return null;
   }
 }
-

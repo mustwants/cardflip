@@ -1,4 +1,5 @@
 //PATH src/components/ProFlipCard/ProFlipCard.tsx
+// PATH: src/components/ProFlipCard/ProFlipCard.tsx
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import "./ProFlipCard.css";
 
@@ -26,12 +27,12 @@ type Props = {
   connectToEmail?: string;
 
   grabCorner?: GrabCorner;
-  curlIntensity?: number;
+  curlIntensity?: number;     // kept for API compatibility
   durationMs?: number;
   perspectivePx?: number;
   overshootDeg?: number;
   shadowPeak?: number;
-  slices?: number;
+  slices?: number;            // kept for API compatibility
   liftZPx?: number;
   diagonalTwistDeg?: number;
 };
@@ -43,12 +44,10 @@ export default function ProFlipCard(p: Props) {
     sponsorLogoUrl, sponsorHref, connectToEmail = "MustWants@MustWants.com",
 
     grabCorner = "bottom-right",
-    curlIntensity = 0.9,
     durationMs = 580,
     perspectivePx = 1200,
     overshootDeg = 6,
     shadowPeak = 1.15,
-    slices = 12,
     liftZPx = 30,
     diagonalTwistDeg = 8,
   } = p;
@@ -62,17 +61,15 @@ export default function ProFlipCard(p: Props) {
   const frontRef = useRef<HTMLElement | null>(null);
   const backRef  = useRef<HTMLElement | null>(null);
 
-  const meshRefs = useRef<HTMLDivElement[]>([]);
-  meshRefs.current = [];
-
-  const rafRef  = useRef<number | null>(null);
+  // animation progress 0..1
   const progRef = useRef(0);
+  const rafRef  = useRef<number | null>(null);
 
   const id     = useId();
   const arcId  = `${id}-arc`;
   const clipId = `${id}-clip`;
 
-  const reduced =
+  const prefersReduced =
     typeof window !== "undefined" &&
     window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
 
@@ -84,54 +81,27 @@ export default function ProFlipCard(p: Props) {
     return [a.slice(0, cut).trim(), a.slice(cut).trim()];
   }, [about]);
 
-  // grid
-  const N = Math.max(10, Math.min(14, Math.round(slices)));
-  const cells = useMemo(
-    () => Array.from({ length: N * N }, (_, k) => ({ i: k % N, j: Math.floor(k / N) })),
-    [N]
-  );
-
-  // diagonal path
-  const start = useMemo<[number, number]>(() => (
-    grabCorner === "top-left" ? [0, 0] :
-    grabCorner === "top-right" ? [1, 0] :
-    grabCorner === "bottom-right" ? [1, 1] :
-    [0, 1]
-  ), [grabCorner]);
-  const end = useMemo<[number, number]>(() => (
-    grabCorner === "top-left" ? [1, 1] :
-    grabCorner === "top-right" ? [0, 1] :
-    grabCorner === "bottom-right" ? [0, 0] :
-    [1, 0]
-  ), [grabCorner]);
-  const { dir, nrm } = useMemo((): { dir: [number, number]; nrm: [number, number] } => {
-    const len = Math.hypot(end[0] - start[0], end[1] - start[1]) || 1;
-    const d: [number, number] = [(end[0] - start[0]) / len, (end[1] - start[1]) / len];
-    const n: [number, number] = [-d[1], d[0]];
-    return { dir: d, nrm: n };
-  }, [start, end]);
-
-  const ease = useCallback((t: number) => {
-    const u = 1 - t;
-    return 1 - u * u * (1 - u * 0.3);
-  }, []);
+  // ---- easing
   const clamp01 = useCallback((v: number) => Math.max(0, Math.min(1, v)), []);
+  const ease = useCallback((t: number) => {
+    // cubic-bezier(0.2,0.7,0.2,1) approximation
+    const u = 1 - t;
+    return 1 - u*u*(1 - u*0.3);
+  }, []);
 
-  // apply one frame
+  // ---- write one frame (opaque faces, no transparency)
   const writeFrame = useCallback((prog: number) => {
     progRef.current = prog;
+    const bell   = Math.sin(Math.PI * prog);
+    const twist  = diagonalTwistDeg * Math.max(0, Math.min(1, (prog - 0.2) / 0.5));
+    const liftZ  = liftZPx * bell;
+    const rotY   = prog * 180;
 
-    const bell    = Math.sin(Math.PI * prog);
-    const phaseB  = Math.max(0, Math.min(1, (prog - 0.2) / 0.5));
-    const twist   = diagonalTwistDeg * phaseB;
-    const liftZ   = liftZPx * bell;
-    const rotY    = prog * 180;
-
+    // keep center anchored, add slight toward-viewer cue
     if (cardRef.current) {
       cardRef.current.style.transform =
         `translateZ(${liftZ.toFixed(2)}px) rotateX(${twist.toFixed(2)}deg) rotateY(${rotY.toFixed(2)}deg)`;
 
-      // shadow bias
       const right = grabCorner.includes("right");
       const bottom = grabCorner.includes("bottom");
       const biasX = (right ? 1 : -1) * 6 * bell;
@@ -140,48 +110,18 @@ export default function ProFlipCard(p: Props) {
       cardRef.current.style.filter =
         `drop-shadow(${biasX}px ${24 + biasY}px ${Math.max(24, 40 / scale)}px rgba(0,0,0,.5))`;
 
+      // lock pointer-events near edge-on to prevent mis-hits
       const edge = prog > 0.45 && prog < 0.55;
       cardRef.current.dataset.edge = edge ? "true" : "false";
+      // hard-face visibility switch (no alpha)
       cardRef.current.dataset.face = prog < 0.5 ? "front" : "back";
       cardRef.current.style.pointerEvents = edge ? "none" : "auto";
     }
+  }, [diagonalTwistDeg, grabCorner, liftZPx, shadowPeak]);
 
-    // curl mesh under content only
-    const sigma   = 0.18;
-    const ampBase = 18 * curlIntensity;
-    const tzBase  = 28 * curlIntensity;
-    const rzBase  = 3  * curlIntensity;
-
-    const ridge: [number, number] = [start[0] + dir[0] * prog, start[1] + dir[1] * prog];
-    const sign = prog < 0.5 ? 1 : -1;
-    const rightSign = grabCorner.includes("right") ? -1 : 1;
-
-    for (let idx = 0; idx < meshRefs.current.length; idx++) {
-      const el = meshRefs.current[idx];
-      if (!el) continue;
-      const i = idx % N, j = Math.floor(idx / N);
-      const u = (i + 0.5) / N, v = (j + 0.5) / N;
-
-      const rel = [u - start[0], v - start[1]];
-      const tAlong = clamp01(rel[0] * dir[0] + rel[1] * dir[1]);
-      const relR = [u - ridge[0], v - ridge[1]];
-      const distPerp = Math.abs(relR[0] * nrm[0] + relR[1] * nrm[1]);
-
-      const gauss = Math.exp(-(distPerp * distPerp) / (2 * sigma * sigma)) * bell;
-      const leadBias = 0.6 + 0.4 * Math.cos(Math.PI * (tAlong - prog));
-      const w = gauss * leadBias;
-
-      const ry = (ampBase * w) * sign;
-      const tz = (tzBase  * w);
-      const rz = (rzBase  * w * rightSign);
-
-      el.style.transform =
-        `translateZ(${tz.toFixed(2)}px) rotateY(${ry.toFixed(2)}deg) rotateZ(${rz.toFixed(2)}deg)`;
-    }
-  }, [N, clamp01, curlIntensity, diagonalTwistDeg, dir, grabCorner, liftZPx, nrm, shadowPeak, start]);
-
+  // ---- drive animation
   const runAnimation = useCallback((to: number) => {
-    if (reduced) {
+    if (prefersReduced) {
       writeFrame(to);
       setAnimating(false);
       return;
@@ -208,7 +148,7 @@ export default function ProFlipCard(p: Props) {
 
     if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
     rafRef.current = requestAnimationFrame(step);
-  }, [clamp01, durationMs, ease, overshootDeg, reduced, writeFrame]);
+  }, [clamp01, durationMs, ease, overshootDeg, prefersReduced, writeFrame]);
 
   useEffect(() => {
     runAnimation(showBack ? 1 : 0);
@@ -227,6 +167,7 @@ export default function ProFlipCard(p: Props) {
     writeFrame(0);
   }, [perspectivePx, writeFrame]);
 
+  // social icons
   const soc = [
     { k: "facebook",  href: social.facebook,  l: "Facebook",  svg: icon("facebook") },
     { k: "instagram", href: social.instagram, l: "Instagram", svg: icon("instagram") },
@@ -247,6 +188,7 @@ export default function ProFlipCard(p: Props) {
       >
         {/* FRONT */}
         <section ref={frontRef} className="pcard-face pcard-front" aria-label="Front">
+          {/* Opaque plate guarantees no transparency */}
           <div className="pcard-plate" aria-hidden="true"></div>
 
           <div className="pcard-banner-top">
@@ -259,10 +201,10 @@ export default function ProFlipCard(p: Props) {
           <header className="pcard-top">
             <div className="pcard-avatar-wrap">
               <img className="pcard-avatar" src={headshotUrl} alt={`${name} headshot`} />
+              {/* Curved banner text inside circle, 7→3 o'clock */}
               <svg className="pcard-avatar-arc" viewBox="0 0 106 106" aria-hidden="true">
                 <defs>
                   <clipPath id={clipId}><circle cx="53" cy="53" r="50" /></clipPath>
-                  {/* 7 → 3 o’clock path inside circle */}
                   <path id={arcId} d="M 22 86 A 41 41 0 0 0 98 53" />
                 </defs>
                 <g clipPath={`url(#${clipId})`}>
@@ -315,19 +257,11 @@ export default function ProFlipCard(p: Props) {
               disabled={animating}
             >{showBack ? "Flip Back" : "Flip"}</button>
           </div>
-
-          {/* curl mesh under content */}
-          <div className="pcard-mesh" aria-hidden="true">
-            {cells.map(({ i, j }, idx) => (
-              <div key={`${i}-${j}`} className="pcard-cell">
-                <div className="pcard-cell-inner" ref={(el) => { if (el) meshRefs.current[idx] = el; }} />
-              </div>
-            ))}
-          </div>
         </section>
 
-        {/* BACK */}
+        {/* BACK (separate face; opaque; pre-rotated) */}
         <section ref={backRef} className="pcard-face pcard-back" aria-label="Back">
+          {/* Opaque plate guarantees no see-through */}
           <div className="pcard-plate" aria-hidden="true"></div>
 
           <div className="pcard-banner-top"></div>
@@ -365,15 +299,6 @@ export default function ProFlipCard(p: Props) {
               onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); if (!animating) setShowBack(!showBack); } }}
               disabled={animating}
             >Flip Back</button>
-          </div>
-
-          {/* curl mesh under content (separate indices) */}
-          <div className="pcard-mesh" aria-hidden="true">
-            {cells.map(({ i, j }, idx) => (
-              <div key={`b-${i}-${j}`} className="pcard-cell">
-                <div className="pcard-cell-inner" ref={(el) => { if (el) meshRefs.current[N * N + idx] = el; }} />
-              </div>
-            ))}
           </div>
         </section>
       </div>
